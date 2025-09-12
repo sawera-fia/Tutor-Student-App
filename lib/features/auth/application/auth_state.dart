@@ -16,7 +16,7 @@ final firebaseUserProvider = StreamProvider<User?>((ref) {
 final currentUserProvider = FutureProvider<UserModel?>((ref) async {
   final firebaseUser = await ref.watch(firebaseUserProvider.future);
   if (firebaseUser == null) return null;
-  
+
   final authService = ref.watch(authServiceProvider);
   return authService.getUserData(firebaseUser.uid);
 });
@@ -33,7 +33,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     print('🔄 Initializing AuthNotifier');
     _authService.authStateChanges.listen((user) async {
       print('🔄 Firebase auth state changed: ${user?.uid ?? 'null'}');
-      
+
       if (user == null) {
         print('🔄 User signed out, setting state to null');
         state = const AsyncValue.data(null);
@@ -56,19 +56,21 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     required String password,
     required String name,
     required UserRole role,
+    UserModel? userModel, // Add optional userModel parameter
   }) async {
     try {
       print('🔄 Starting signup process');
       state = const AsyncValue.loading();
-      
+
       final user = await _authService.signUpWithEmailAndPassword(
         email: email,
         password: password,
         name: name,
         role: role,
+        userModel: userModel, // Pass the enhanced user model
       );
-      
-      print('�� Signup successful: ${user?.name}');
+
+      print('✅ Signup successful: ${user?.name}');
       // Don't set state here - let the auth state listener handle it
     } catch (e, stackTrace) {
       print('❌ Signup error: $e');
@@ -76,19 +78,16 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     try {
       print('🔄 Starting signin process');
       state = const AsyncValue.loading();
-      
+
       final user = await _authService.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       print('�� Signin successful: ${user?.name}');
       // Don't set state here - let the auth state listener handle it
     } catch (e, stackTrace) {
@@ -127,7 +126,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
 }
 
 // Auth notifier provider
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AsyncValue<UserModel?>>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return AuthNotifier(authService);
-});
+final authNotifierProvider =
+    StateNotifierProvider<AuthNotifier, AsyncValue<UserModel?>>((ref) {
+      final authService = ref.watch(authServiceProvider);
+      return AuthNotifier(authService);
+    });

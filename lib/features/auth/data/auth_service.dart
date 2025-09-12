@@ -18,6 +18,7 @@ class AuthService {
     required String password,
     required String name,
     required UserRole role,
+    UserModel? userModel, // Add optional userModel parameter
   }) async {
     try {
       print('🚀 Starting signup process for: $email');
@@ -32,26 +33,33 @@ class AuthService {
 
       if (result.user != null) {
         try {
-          // Create user document in Firestore
-          final userModel = UserModel(
+          // Use the provided userModel if available, otherwise create a basic one
+          final finalUserModel =
+              userModel ??
+              UserModel(
+                id: result.user!.uid,
+                email: email,
+                name: name,
+                role: role,
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              );
+
+          // Ensure the ID is set correctly
+          final finalUserModelWithId = finalUserModel.copyWith(
             id: result.user!.uid,
-            email: email,
-            name: name,
-            role: role,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
           );
 
-          print('�� Creating Firestore document...');
-          print('�� User data to save: ${userModel.toJson()}');
+          print('📝 Creating Firestore document...');
+          print('📝 User data to save: ${finalUserModelWithId.toJson()}');
 
           await _firestore
               .collection('users')
               .doc(result.user!.uid)
-              .set(userModel.toJson());
+              .set(finalUserModelWithId.toJson());
 
           print('✅ Firestore document created successfully!');
-          return userModel;
+          return finalUserModelWithId;
         } catch (firestoreError) {
           print('❌ Firestore error: $firestoreError');
           // If Firestore fails, delete the Firebase Auth user

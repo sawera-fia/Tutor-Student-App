@@ -32,7 +32,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _isLoading = false;
   int _currentStep = 0;
   UserRole _selectedRole = UserRole.student;
-  
+
   // Form data
   DateTime? _selectedDate;
   String? _selectedGender;
@@ -67,10 +67,110 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   void _nextStep() {
     if (_currentStep < _totalSteps - 1) {
-      setState(() {
-        _currentStep++;
-      });
+      // Validate current step before proceeding
+      if (_validateCurrentStep()) {
+        setState(() {
+          _currentStep++;
+        });
+      }
     }
+  }
+
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Basic Info
+        if (_nameController.text.trim().isEmpty ||
+            _emailController.text.trim().isEmpty ||
+            _passwordController.text.isEmpty ||
+            _confirmPasswordController.text.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please fill in all required fields'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+        if (_passwordController.text != _confirmPasswordController.text) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Passwords do not match'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+        break;
+      case 1: // Personal Details
+        if (_phoneController.text.trim().isEmpty ||
+            _addressController.text.trim().isEmpty ||
+            _cityController.text.trim().isEmpty ||
+            _selectedCountry == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please fill in all required personal details'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+        break;
+      case 2: // Teaching/Learning Profile
+        if (_selectedRole == UserRole.teacher) {
+          if (_bioController.text.trim().isEmpty ||
+              _selectedSubjects.isEmpty ||
+              _universityController.text.trim().isEmpty ||
+              _degreeController.text.trim().isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please fill in all required teaching profile details',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return false;
+          }
+        } else {
+          if (_currentSchoolController.text.trim().isEmpty ||
+              _selectedEducationLevel == null ||
+              _selectedSubjects.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Please fill in all required learning profile details',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return false;
+          }
+        }
+        break;
+      case 3: // Availability/Preferences
+        if (_selectedRole == UserRole.teacher) {
+          if (!_isOnlineAvailable && !_isPhysicalAvailable) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please select at least one teaching mode'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return false;
+          }
+        }
+        if (_selectedLanguages.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please select at least one language'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return false;
+        }
+        break;
+    }
+    return true;
   }
 
   void _previousStep() {
@@ -89,7 +189,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create enhanced user model
+      // Create enhanced user model with role-based field assignment
       final userModel = UserModel(
         id: '', // Will be set by Firebase
         email: _emailController.text.trim(),
@@ -97,64 +197,110 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         role: _selectedRole,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        
-        // Common fields
+
+        // Common fields (always included)
         phoneNumber: _phoneController.text.trim(),
         dateOfBirth: _selectedDate,
         gender: _selectedGender,
         address: _addressController.text.trim(),
         city: _cityController.text.trim(),
         country: _selectedCountry,
-        
-        // Teacher fields
-        bio: _selectedRole == UserRole.teacher ? _bioController.text.trim() : null,
-        subjects: _selectedSubjects.isNotEmpty ? _selectedSubjects : null,
+
+        // Teacher-specific fields - only set if user is a teacher
+        bio: _selectedRole == UserRole.teacher
+            ? _bioController.text.trim()
+            : null,
+        subjects:
+            _selectedRole == UserRole.teacher && _selectedSubjects.isNotEmpty
+            ? _selectedSubjects
+            : null,
         hourlyRate: _selectedRole == UserRole.teacher ? _hourlyRate : null,
-        location: _addressController.text.trim(),
-        isOnlineAvailable: _selectedRole == UserRole.teacher ? _isOnlineAvailable : null,
-        isPhysicalAvailable: _selectedRole == UserRole.teacher ? _isPhysicalAvailable : null,
-        teachingModes: _selectedRole == UserRole.teacher ? _selectedTeachingModes : null,
-        experience: _selectedRole == UserRole.teacher ? _experienceController.text.trim() : null,
-        qualifications: _selectedRole == UserRole.teacher ? ['Bachelor\'s Degree'] : null,
-        university: _selectedRole == UserRole.teacher ? _universityController.text.trim() : null,
-        degree: _selectedRole == UserRole.teacher ? _degreeController.text.trim() : null,
-        yearsOfExperience: _selectedRole == UserRole.teacher ? _yearsOfExperience : null,
+        location: _selectedRole == UserRole.teacher
+            ? _addressController.text.trim()
+            : null,
+        isOnlineAvailable: _selectedRole == UserRole.teacher
+            ? _isOnlineAvailable
+            : null,
+        isPhysicalAvailable: _selectedRole == UserRole.teacher
+            ? _isPhysicalAvailable
+            : null,
+        teachingModes:
+            _selectedRole == UserRole.teacher &&
+                _selectedTeachingModes.isNotEmpty
+            ? _selectedTeachingModes
+            : null,
+        experience: _selectedRole == UserRole.teacher
+            ? _experienceController.text.trim()
+            : null,
+        qualifications: _selectedRole == UserRole.teacher
+            ? ['Bachelor\'s Degree']
+            : null,
+        university: _selectedRole == UserRole.teacher
+            ? _universityController.text.trim()
+            : null,
+        degree: _selectedRole == UserRole.teacher
+            ? _degreeController.text.trim()
+            : null,
+        yearsOfExperience: _selectedRole == UserRole.teacher
+            ? _yearsOfExperience
+            : null,
         languages: _selectedLanguages.isNotEmpty ? _selectedLanguages : null,
         specializations: _selectedRole == UserRole.teacher ? 'General' : null,
-        rating: 0.0,
-        totalReviews: 0,
-        isVerified: false,
-        isAvailable: true,
-        
-        // Student fields
-        interestedSubjects: _selectedRole == UserRole.student ? _selectedSubjects : null,
-        currentSchool: _selectedRole == UserRole.student ? _currentSchoolController.text.trim() : null,
-        studentEducationLevel: _selectedRole == UserRole.student ? _selectedEducationLevel : null,
-        learningGoals: _selectedRole == UserRole.student ? [_learningGoalsController.text.trim()] : null,
-        preferredTeachingMode: _selectedRole == UserRole.student ? 'both' : null,
-        preferredSchedule: 'flexible',
-        budgetPerHour: _selectedRole == UserRole.student ? _budgetPerHour : null,
-        preferredLanguages: _selectedRole == UserRole.student ? _selectedLanguages : null,
-        learningStyle: 'visual',
-        currentAcademicLevel: _selectedRole == UserRole.student ? _selectedEducationLevel : null,
+        rating: _selectedRole == UserRole.teacher ? 0.0 : null,
+        totalReviews: _selectedRole == UserRole.teacher ? 0 : null,
+        isVerified: _selectedRole == UserRole.teacher ? false : null,
+        isAvailable: _selectedRole == UserRole.teacher ? true : null,
+
+        // Student-specific fields - only set if user is a student
+        interestedSubjects:
+            _selectedRole == UserRole.student && _selectedSubjects.isNotEmpty
+            ? _selectedSubjects
+            : null,
+        currentSchool: _selectedRole == UserRole.student
+            ? _currentSchoolController.text.trim()
+            : null,
+        studentEducationLevel: _selectedRole == UserRole.student
+            ? _selectedEducationLevel
+            : null,
+        learningGoals:
+            _selectedRole == UserRole.student &&
+                _learningGoalsController.text.trim().isNotEmpty
+            ? [_learningGoalsController.text.trim()]
+            : null,
+        preferredTeachingMode: _selectedRole == UserRole.student
+            ? 'both'
+            : null,
+        preferredSchedule: _selectedRole == UserRole.student
+            ? 'flexible'
+            : null,
+        budgetPerHour: _selectedRole == UserRole.student
+            ? _budgetPerHour
+            : null,
+        preferredLanguages:
+            _selectedRole == UserRole.student && _selectedLanguages.isNotEmpty
+            ? _selectedLanguages
+            : null,
+        learningStyle: _selectedRole == UserRole.student ? 'visual' : null,
+        currentAcademicLevel: _selectedRole == UserRole.student
+            ? _selectedEducationLevel
+            : null,
       );
 
       await ref
           .read(authNotifierProvider.notifier)
-          .signUp(q
+          .signUp(
             email: _emailController.text.trim(),
             password: _passwordController.text,
             name: _nameController.text.trim(),
             role: _selectedRole,
             userModel: userModel, // Pass the enhanced user model
           );
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Sign up failed: ${e.toString()}'), 
-            backgroundColor: Colors.red
+            content: Text('Sign up failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -174,18 +320,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           children: [
             // Header with progress indicator
             _buildHeader(),
-            
+
             // Form content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
-                child: Form(
-                  key: _formKey,
-                  child: _buildCurrentStep(),
-                ),
+                child: Form(key: _formKey, child: _buildCurrentStep()),
               ),
             ),
-            
+
             // Navigation buttons
             _buildNavigationButtons(),
           ],
@@ -224,34 +367,36 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Progress indicator
           Row(
             children: List.generate(_totalSteps, (index) {
               final isActive = index <= _currentStep;
               final isCompleted = index < _currentStep;
-              
+
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: index < _totalSteps - 1 ? 8 : 0),
+                  margin: EdgeInsets.only(
+                    right: index < _totalSteps - 1 ? 8 : 0,
+                  ),
                   height: 4,
                   decoration: BoxDecoration(
-                    color: isCompleted 
+                    color: isCompleted
                         ? Theme.of(context).primaryColor
-                        : isActive 
-                            ? Theme.of(context).primaryColor.withOpacity(0.5)
-                            : Colors.grey[300],
+                        : isActive
+                        ? Theme.of(context).primaryColor.withOpacity(0.5)
+                        : Colors.grey[300],
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               );
             }),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Step title
           Text(
             _getStepTitle(),
@@ -272,9 +417,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       case 1:
         return 'Personal Details';
       case 2:
-        return _selectedRole == UserRole.teacher ? 'Teaching Profile' : 'Learning Profile';
+        return _selectedRole == UserRole.teacher
+            ? 'Teaching Profile'
+            : 'Learning Profile';
       case 3:
-        return _selectedRole == UserRole.teacher ? 'Availability & Preferences' : 'Preferences';
+        return _selectedRole == UserRole.teacher
+            ? 'Availability & Preferences'
+            : 'Preferences';
       case 4:
         return 'Review & Submit';
       default:
@@ -289,12 +438,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       case 1:
         return _buildPersonalDetailsStep();
       case 2:
-        return _selectedRole == UserRole.teacher 
-            ? _buildTeachingProfileStep() 
+        return _selectedRole == UserRole.teacher
+            ? _buildTeachingProfileStep()
             : _buildLearningProfileStep();
       case 3:
-        return _selectedRole == UserRole.teacher 
-            ? _buildAvailabilityStep() 
+        return _selectedRole == UserRole.teacher
+            ? _buildAvailabilityStep()
             : _buildPreferencesStep();
       case 4:
         return _buildReviewStep();
@@ -307,6 +456,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Fields marked with * are required',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         // Role selection
         Container(
           padding: const EdgeInsets.all(16),
@@ -330,7 +507,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedRole = UserRole.student),
+                      onTap: () =>
+                          setState(() => _selectedRole = UserRole.student),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -380,7 +558,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _selectedRole = UserRole.teacher),
+                      onTap: () =>
+                          setState(() => _selectedRole = UserRole.teacher),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -432,14 +611,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Basic form fields
         TextFormField(
           controller: _nameController,
           decoration: InputDecoration(
-            labelText: 'Full Name',
+            labelText: 'Full Name *',
             hintText: 'Enter your full name',
             prefixIcon: const Icon(Icons.person_outline),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -456,14 +635,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             return null;
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
-            labelText: 'Email',
+            labelText: 'Email *',
             hintText: 'Enter your email',
             prefixIcon: const Icon(Icons.email_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -480,19 +659,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             return null;
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _passwordController,
           obscureText: _obscurePassword,
           decoration: InputDecoration(
-            labelText: 'Password',
+            labelText: 'Password *',
             hintText: 'Create a password',
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
-              icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              icon: Icon(
+                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+              ),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
@@ -508,19 +690,25 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             return null;
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _confirmPasswordController,
           obscureText: _obscureConfirmPassword,
           decoration: InputDecoration(
-            labelText: 'Confirm Password',
+            labelText: 'Confirm Password *',
             hintText: 'Confirm your password',
             prefixIcon: const Icon(Icons.lock_outline),
             suffixIcon: IconButton(
-              icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
-              onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              icon: Icon(
+                _obscureConfirmPassword
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+              ),
+              onPressed: () => setState(
+                () => _obscureConfirmPassword = !_obscureConfirmPassword,
+              ),
             ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
@@ -544,28 +732,66 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Fields marked with * are required',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         TextFormField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
-            labelText: 'Phone Number',
+            labelText: 'Phone Number *',
             hintText: 'Enter your phone number',
             prefixIcon: const Icon(Icons.phone_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your phone number';
+            }
+            return null;
+          },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Date of Birth
         InkWell(
           onTap: () async {
             final date = await showDatePicker(
               context: context,
-              initialDate: DateTime.now().subtract(const Duration(days: 6570)), // 18 years ago
-              firstDate: DateTime.now().subtract(const Duration(days: 36500)), // 100 years ago
+              initialDate: DateTime.now().subtract(
+                const Duration(days: 6570),
+              ), // 18 years ago
+              firstDate: DateTime.now().subtract(
+                const Duration(days: 36500),
+              ), // 100 years ago
               lastDate: DateTime.now(),
             );
             if (date != null) {
@@ -577,27 +803,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(
+                color: _selectedDate != null
+                    ? Colors.grey[300]!
+                    : Colors.red[300]!,
+                width: _selectedDate != null ? 1 : 2,
+              ),
             ),
             child: Row(
               children: [
                 Icon(Icons.calendar_today, color: Colors.grey[600]),
                 const SizedBox(width: 12),
                 Text(
-                  _selectedDate != null 
+                  _selectedDate != null
                       ? 'Date of Birth: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
-                      : 'Select Date of Birth',
+                      : 'Select Date of Birth *',
                   style: TextStyle(
-                    color: _selectedDate != null ? Colors.grey[800] : Colors.grey[600],
+                    color: _selectedDate != null
+                        ? Colors.grey[800]
+                        : Colors.grey[600],
                   ),
                 ),
               ],
             ),
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Gender selection
         Container(
           padding: const EdgeInsets.all(16),
@@ -610,7 +843,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Gender:',
+                'Gender: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -618,13 +851,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
               const SizedBox(height: 12),
               Row(
-                children: ['Male', 'Female', 'Other', 'Prefer not to say'].map((gender) {
+                children: ['Male', 'Female', 'Other', 'Prefer not to say'].map((
+                  gender,
+                ) {
                   return Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() => _selectedGender = gender),
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: _selectedGender == gender
                               ? Theme.of(context).primaryColor.withOpacity(0.1)
@@ -633,7 +871,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           border: Border.all(
                             color: _selectedGender == gender
                                 ? Theme.of(context).primaryColor
+                                : _selectedGender == null
+                                ? Colors.red[300]!
                                 : Colors.grey[300]!,
+                            width: _selectedGender == null ? 2 : 1,
                           ),
                         ),
                         child: Text(
@@ -654,36 +895,50 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _addressController,
           decoration: InputDecoration(
-            labelText: 'Address',
+            labelText: 'Address *',
             hintText: 'Enter your address',
             prefixIcon: const Icon(Icons.location_on_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your address';
+            }
+            return null;
+          },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         Row(
           children: [
             Expanded(
               child: TextFormField(
                 controller: _cityController,
                 decoration: InputDecoration(
-                  labelText: 'City',
+                  labelText: 'City *',
                   hintText: 'Enter your city',
                   prefixIcon: const Icon(Icons.location_city_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your city';
+                  }
+                  return null;
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -693,20 +948,37 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: _selectedCountry == null
+                        ? Colors.red[300]!
+                        : Colors.grey[300]!,
+                    width: _selectedCountry == null ? 2 : 1,
+                  ),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedCountry,
-                    hint: const Text('Country'),
+                    hint: const Text('Country *'),
                     isExpanded: true,
-                    items: ['India', 'USA', 'UK', 'Canada', 'Australia', 'Other']
-                        .map((country) => DropdownMenuItem(
-                              value: country,
-                              child: Text(country),
-                            ))
-                        .toList(),
-                    onChanged: (value) => setState(() => _selectedCountry = value),
+                    items:
+                        [
+                              'Pakistan',
+                              'India',
+                              'USA',
+                              'UK',
+                              'Canada',
+                              'Australia',
+                              'Other',
+                            ]
+                            .map(
+                              (country) => DropdownMenuItem(
+                                value: country,
+                                child: Text(country),
+                              ),
+                            )
+                            .toList(),
+                    onChanged: (value) =>
+                        setState(() => _selectedCountry = value),
                   ),
                 ),
               ),
@@ -721,21 +993,55 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Fields marked with * are required',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         TextFormField(
           controller: _bioController,
           maxLines: 3,
           decoration: InputDecoration(
-            labelText: 'Bio',
+            labelText: 'Bio *',
             hintText: 'Tell students about yourself and your teaching style',
             prefixIcon: const Icon(Icons.description_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your bio';
+            }
+            return null;
+          },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Subjects selection
         Container(
           padding: const EdgeInsets.all(16),
@@ -748,7 +1054,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Subjects you teach:',
+                'Subjects you teach: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -758,34 +1064,45 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  'Mathematics', 'Science', 'English', 'History', 'Geography',
-                  'Physics', 'Chemistry', 'Biology', 'Computer Science', 'Literature'
-                ].map((subject) {
-                  final isSelected = _selectedSubjects.contains(subject);
-                  return FilterChip(
-                    label: Text(subject),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedSubjects.add(subject);
-                        } else {
-                          _selectedSubjects.remove(subject);
-                        }
-                      });
-                    },
-                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                    checkmarkColor: Theme.of(context).primaryColor,
-                  );
-                }).toList(),
+                children:
+                    [
+                      'Mathematics',
+                      'Science',
+                      'English',
+                      'History',
+                      'Geography',
+                      'Physics',
+                      'Chemistry',
+                      'Biology',
+                      'Computer Science',
+                      'Literature',
+                    ].map((subject) {
+                      final isSelected = _selectedSubjects.contains(subject);
+                      return FilterChip(
+                        label: Text(subject),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedSubjects.add(subject);
+                            } else {
+                              _selectedSubjects.remove(subject);
+                            }
+                          });
+                        },
+                        selectedColor: Theme.of(
+                          context,
+                        ).primaryColor.withOpacity(0.2),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                      );
+                    }).toList(),
               ),
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         Row(
           children: [
             Expanded(
@@ -795,12 +1112,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   labelText: 'Years of Experience',
                   hintText: 'e.g., 5',
                   prefixIcon: const Icon(Icons.work_outline),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
                 keyboardType: TextInputType.number,
                 onChanged: (value) => _yearsOfExperience = int.tryParse(value),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final experience = int.tryParse(value);
+                    if (experience == null || experience < 0) {
+                      return 'Please enter a valid experience';
+                    }
+                  }
+                  return null;
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -810,43 +1138,66 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   labelText: 'Hourly Rate (\$)',
                   hintText: 'e.g., 25',
                   prefixIcon: const Icon(Icons.attach_money),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                 ),
                 keyboardType: TextInputType.number,
                 onChanged: (value) => _hourlyRate = double.tryParse(value),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final rate = double.tryParse(value);
+                    if (rate == null || rate <= 0) {
+                      return 'Please enter a valid hourly rate';
+                    }
+                  }
+                  return null;
+                },
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _universityController,
           decoration: InputDecoration(
-            labelText: 'University/Institution',
+            labelText: 'University/Institution *',
             hintText: 'Where did you study?',
             prefixIcon: const Icon(Icons.school_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your university/institution';
+            }
+            return null;
+          },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _degreeController,
           decoration: InputDecoration(
-            labelText: 'Degree/Qualification',
+            labelText: 'Degree/Qualification *',
             hintText: 'e.g., Bachelor of Science',
             prefixIcon: const Icon(Icons.verified_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your degree/qualification';
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -856,20 +1207,54 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Fields marked with * are required',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         TextFormField(
           controller: _currentSchoolController,
           decoration: InputDecoration(
-            labelText: 'Current School/Institution',
+            labelText: 'Current School/Institution *',
             hintText: 'Where are you currently studying?',
             prefixIcon: const Icon(Icons.school_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your current school/institution';
+            }
+            return null;
+          },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Education level selection
         Container(
           padding: const EdgeInsets.all(16),
@@ -882,7 +1267,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Education Level:',
+                'Education Level: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -890,47 +1275,59 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
               const SizedBox(height: 12),
               Row(
-                children: ['Primary', 'Secondary', 'High School', 'University', 'Graduate']
-                    .map((level) {
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedEducationLevel = level),
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                        decoration: BoxDecoration(
-                          color: _selectedEducationLevel == level
-                              ? Theme.of(context).primaryColor.withOpacity(0.1)
-                              : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: _selectedEducationLevel == level
-                                ? Theme.of(context).primaryColor
-                                : Colors.grey[300]!,
+                children:
+                    [
+                      'Primary',
+                      'Secondary',
+                      'High School',
+                      'University',
+                      'Graduate',
+                    ].map((level) {
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () =>
+                              setState(() => _selectedEducationLevel = level),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _selectedEducationLevel == level
+                                  ? Theme.of(
+                                      context,
+                                    ).primaryColor.withOpacity(0.1)
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _selectedEducationLevel == level
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey[300]!,
+                              ),
+                            ),
+                            child: Text(
+                              level,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _selectedEducationLevel == level
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                            ),
                           ),
                         ),
-                        child: Text(
-                          level,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _selectedEducationLevel == level
-                                ? Theme.of(context).primaryColor
-                                : Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
               ),
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Subjects of interest
         Container(
           padding: const EdgeInsets.all(16),
@@ -943,7 +1340,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Subjects you want to learn:',
+                'Subjects you want to learn: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -953,49 +1350,60 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  'Mathematics', 'Science', 'English', 'History', 'Geography',
-                  'Physics', 'Chemistry', 'Biology', 'Computer Science', 'Literature'
-                ].map((subject) {
-                  final isSelected = _selectedSubjects.contains(subject);
-                  return FilterChip(
-                    label: Text(subject),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedSubjects.add(subject);
-                        } else {
-                          _selectedSubjects.remove(subject);
-                        }
-                      });
-                    },
-                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                    checkmarkColor: Theme.of(context).primaryColor,
-                  );
-                }).toList(),
+                children:
+                    [
+                      'Mathematics',
+                      'Science',
+                      'English',
+                      'History',
+                      'Geography',
+                      'Physics',
+                      'Chemistry',
+                      'Biology',
+                      'Computer Science',
+                      'Literature',
+                    ].map((subject) {
+                      final isSelected = _selectedSubjects.contains(subject);
+                      return FilterChip(
+                        label: Text(subject),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedSubjects.add(subject);
+                            } else {
+                              _selectedSubjects.remove(subject);
+                            }
+                          });
+                        },
+                        selectedColor: Theme.of(
+                          context,
+                        ).primaryColor.withOpacity(0.2),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                      );
+                    }).toList(),
               ),
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           controller: _learningGoalsController,
           maxLines: 3,
           decoration: InputDecoration(
             labelText: 'Learning Goals',
             hintText: 'What do you want to achieve?',
-            prefixIcon: const Icon(Icons.target_outlined),
+            prefixIcon: const Icon(Icons.flag_outlined),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.white,
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         TextFormField(
           decoration: InputDecoration(
             labelText: 'Budget per Hour (\$)',
@@ -1007,6 +1415,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
           keyboardType: TextInputType.number,
           onChanged: (value) => _budgetPerHour = double.tryParse(value),
+          validator: (value) {
+            if (value != null && value.isNotEmpty) {
+              final budget = double.tryParse(value);
+              if (budget == null || budget <= 0) {
+                return 'Please enter a valid budget amount';
+              }
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -1016,6 +1433,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Fields marked with * are required',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         // Teaching modes
         Container(
           padding: const EdgeInsets.all(16),
@@ -1028,7 +1473,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Teaching Modes:',
+                'Teaching Modes: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -1039,7 +1484,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 children: [
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _isOnlineAvailable = !_isOnlineAvailable),
+                      onTap: () => setState(
+                        () => _isOnlineAvailable = !_isOnlineAvailable,
+                      ),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -1081,7 +1528,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: GestureDetector(
-                      onTap: () => setState(() => _isPhysicalAvailable = !_isPhysicalAvailable),
+                      onTap: () => setState(
+                        () => _isPhysicalAvailable = !_isPhysicalAvailable,
+                      ),
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -1125,9 +1574,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Languages
         Container(
           padding: const EdgeInsets.all(16),
@@ -1140,7 +1589,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Languages you speak:',
+                'Languages you speak: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -1150,26 +1599,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  'English', 'Hindi', 'Spanish', 'French', 'German', 'Chinese', 'Arabic'
-                ].map((language) {
-                  final isSelected = _selectedLanguages.contains(language);
-                  return FilterChip(
-                    label: Text(language),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedLanguages.add(language);
-                        } else {
-                          _selectedLanguages.remove(language);
-                        }
-                      });
-                    },
-                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                    checkmarkColor: Theme.of(context).primaryColor,
-                  );
-                }).toList(),
+                children:
+                    [
+                      'English',
+                      'Hindi',
+                      'Spanish',
+                      'French',
+                      'German',
+                      'Chinese',
+                      'Arabic',
+                    ].map((language) {
+                      final isSelected = _selectedLanguages.contains(language);
+                      return FilterChip(
+                        label: Text(language),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedLanguages.add(language);
+                            } else {
+                              _selectedLanguages.remove(language);
+                            }
+                          });
+                        },
+                        selectedColor: Theme.of(
+                          context,
+                        ).primaryColor.withOpacity(0.2),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                      );
+                    }).toList(),
               ),
             ],
           ),
@@ -1182,6 +1640,34 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Fields marked with * are required',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         // Languages
         Container(
           padding: const EdgeInsets.all(16),
@@ -1194,7 +1680,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Preferred languages for teaching:',
+                'Preferred languages for teaching: *',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],
@@ -1204,26 +1690,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  'English', 'Hindi', 'Spanish', 'French', 'German', 'Chinese', 'Arabic'
-                ].map((language) {
-                  final isSelected = _selectedLanguages.contains(language);
-                  return FilterChip(
-                    label: Text(language),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedLanguages.add(language);
-                        } else {
-                          _selectedLanguages.remove(language);
-                        }
-                      });
-                    },
-                    selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-                    checkmarkColor: Theme.of(context).primaryColor,
-                  );
-                }).toList(),
+                children:
+                    [
+                      'English',
+                      'Hindi',
+                      'Spanish',
+                      'French',
+                      'German',
+                      'Chinese',
+                      'Arabic',
+                    ].map((language) {
+                      final isSelected = _selectedLanguages.contains(language);
+                      return FilterChip(
+                        label: Text(language),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedLanguages.add(language);
+                            } else {
+                              _selectedLanguages.remove(language);
+                            }
+                          });
+                        },
+                        selectedColor: Theme.of(
+                          context,
+                        ).primaryColor.withOpacity(0.2),
+                        checkmarkColor: Theme.of(context).primaryColor,
+                      );
+                    }).toList(),
               ),
             ],
           ),
@@ -1243,9 +1738,37 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             color: Colors.grey[800],
           ),
         ),
-        
+
+        const SizedBox(height: 16),
+
+        // Required fields note
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Please review all information before submitting',
+                  style: TextStyle(
+                    color: Colors.blue[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         const SizedBox(height: 24),
-        
+
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1258,18 +1781,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             children: [
               _buildReviewItem('Name', _nameController.text),
               _buildReviewItem('Email', _emailController.text),
-              _buildReviewItem('Role', _selectedRole.toString().split('.').last),
+              _buildReviewItem(
+                'Role',
+                _selectedRole.toString().split('.').last,
+              ),
               _buildReviewItem('Phone', _phoneController.text),
               _buildReviewItem('City', _cityController.text),
               _buildReviewItem('Country', _selectedCountry ?? 'Not specified'),
               if (_selectedRole == UserRole.teacher) ...[
                 _buildReviewItem('Subjects', _selectedSubjects.join(', ')),
                 _buildReviewItem('Experience', _experienceController.text),
-                _buildReviewItem('Hourly Rate', _hourlyRate != null ? '\$$_hourlyRate' : 'Not specified'),
+                _buildReviewItem(
+                  'Hourly Rate',
+                  _hourlyRate != null ? '\$$_hourlyRate' : 'Not specified',
+                ),
               ] else ...[
-                _buildReviewItem('Education Level', _selectedEducationLevel ?? 'Not specified'),
-                _buildReviewItem('Interested Subjects', _selectedSubjects.join(', ')),
-                _buildReviewItem('Budget', _budgetPerHour != null ? '\$$_budgetPerHour' : 'Not specified'),
+                _buildReviewItem(
+                  'Education Level',
+                  _selectedEducationLevel ?? 'Not specified',
+                ),
+                _buildReviewItem(
+                  'Interested Subjects',
+                  _selectedSubjects.join(', '),
+                ),
+                _buildReviewItem(
+                  'Budget',
+                  _budgetPerHour != null
+                      ? '\$$_budgetPerHour'
+                      : 'Not specified',
+                ),
               ],
             ],
           ),
@@ -1345,7 +1885,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(

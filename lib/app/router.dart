@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/application/auth_state.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/signup_screen.dart';
-import '../features/student/presentation/student_dashboard.dart';
+import '../features/student/presentation/student_dashboard_screen.dart';
 import '../features/tutor/presentation/tutor_dashboard.dart';
 import '../shared/models/user_model.dart';
 
@@ -13,12 +13,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
-      
+
       print('🔄 Router redirect check - Auth state: ${authState.toString()}');
-      
+
       final isLoggedIn = authState.hasValue && authState.value != null;
-      final isOnAuthScreen = state.matchedLocation == '/login' || 
-                            state.matchedLocation == '/signup';
+      final isOnAuthScreen =
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup';
 
       print('🔄 Is logged in: $isLoggedIn, Is on auth screen: $isOnAuthScreen');
 
@@ -31,8 +32,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // If logged in and on auth screens, redirect to appropriate dashboard
       if (isLoggedIn && isOnAuthScreen) {
         final user = authState.value!;
-        final targetRoute = user.role == UserRole.student 
-            ? '/student-dashboard' 
+        final targetRoute = user.role == UserRole.student
+            ? '/student-dashboard'
             : '/tutor-dashboard';
         print('🔄 Redirecting to dashboard: $targetRoute');
         return targetRoute;
@@ -55,7 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/student-dashboard',
         name: 'student-dashboard',
-        builder: (context, state) => const StudentDashboard(),
+        builder: (context, state) => const StudentDashboardScreen(),
       ),
       GoRoute(
         path: '/tutor-dashboard',
@@ -69,8 +70,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final authState = ref.read(authNotifierProvider);
           if (authState.hasValue && authState.value != null) {
             final user = authState.value!;
-            return user.role == UserRole.student 
-                ? '/student-dashboard' 
+            return user.role == UserRole.student
+                ? '/student-dashboard'
                 : '/tutor-dashboard';
           }
           return '/login';

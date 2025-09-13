@@ -24,7 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  // ... existing code ...
+  // ... existing code ... 
 
 Future<void> _signIn() async {
   if (!_formKey.currentState!.validate()) return;
@@ -53,8 +53,6 @@ Future<void> _signIn() async {
     }
   }
 }
-
-// ... existing code ...
 
   Future<void> _resetPassword() async {
     if (_emailController.text.trim().isEmpty) {

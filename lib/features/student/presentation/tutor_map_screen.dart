@@ -1,7 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart' as geocoding;
-import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../shared/models/user_model.dart';
 
@@ -15,10 +12,6 @@ class TutorMapScreen extends StatefulWidget {
 }
 
 class _TutorMapScreenState extends State<TutorMapScreen> {
-  geocoding.Location? _tutorLocation;
-  Position? _myPosition;
-  String? _resolvedAddress;
-  String? _error;
   bool _requesting = false;
 
   @override
@@ -29,81 +22,9 @@ class _TutorMapScreenState extends State<TutorMapScreen> {
 
   Future<void> _prepare() async {
     setState(() => _requesting = true);
-    try {
-      await _resolveTutorAddress();
-      await _getCurrentLocation();
-    } catch (_) {}
+    // Simulate loading time
+    await Future.delayed(const Duration(seconds: 1));
     setState(() => _requesting = false);
-  }
-
-  Future<void> _resolveTutorAddress() async {
-    try {
-      final List<String> parts = [];
-      if (widget.tutor.address != null &&
-          widget.tutor.address!.trim().isNotEmpty) {
-        parts.add(widget.tutor.address!.trim());
-      }
-      if (widget.tutor.city != null && widget.tutor.city!.trim().isNotEmpty) {
-        parts.add(widget.tutor.city!.trim());
-      }
-      if (widget.tutor.country != null &&
-          widget.tutor.country!.trim().isNotEmpty) {
-        parts.add(widget.tutor.country!.trim());
-      }
-      final query = parts.isEmpty ? widget.tutor.name : parts.join(', ');
-      final locations = await geocoding.locationFromAddress(query);
-      if (locations.isEmpty) {
-        setState(() => _error = 'Could not locate the tutor address.');
-        return;
-      }
-      setState(() {
-        _tutorLocation = locations.first;
-        _resolvedAddress = query;
-      });
-    } catch (e) {
-      setState(() => _error = 'Failed to locate the tutor address.');
-    }
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() => _error = 'Location services are disabled.');
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() => _error = 'Location permission denied.');
-          return;
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        setState(() => _error = 'Location permission permanently denied.');
-        return;
-      }
-
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      setState(() => _myPosition = pos);
-    } catch (e) {
-      setState(() => _error = 'Failed to get your location.');
-    }
-  }
-
-  double? _distanceKm() {
-    if (_tutorLocation == null || _myPosition == null) return null;
-    final meters = Geolocator.distanceBetween(
-      _myPosition!.latitude,
-      _myPosition!.longitude,
-      _tutorLocation!.latitude,
-      _tutorLocation!.longitude,
-    );
-    return meters / 1000.0;
   }
 
   Future<void> _openExternalMaps() async {
@@ -118,7 +39,20 @@ class _TutorMapScreenState extends State<TutorMapScreen> {
     final Uri uri = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
     );
-    await launchUrl(uri, mode: LaunchMode.platformDefault);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('Could not launch Google Maps');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not open Google Maps: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -140,92 +74,178 @@ class _TutorMapScreenState extends State<TutorMapScreen> {
 
   Widget _buildBody() {
     if (_requesting) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error != null) {
-      return _ErrorView(message: _error!, onOpenMaps: _openExternalMaps);
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading location...'),
+          ],
+        ),
+      );
     }
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.location_on_outlined),
-              title: const Text('Tutor address'),
-              subtitle: Text(_resolvedAddress ?? 'Not available'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.my_location_outlined),
-              title: const Text('Your location'),
-              subtitle: Text(
-                _myPosition != null
-                    ? '${_myPosition!.latitude.toStringAsFixed(5)}, ${_myPosition!.longitude.toStringAsFixed(5)}'
-                    : 'Location unavailable',
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (_distanceKm() != null)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.straighten),
-                title: const Text('Approx. distance'),
-                subtitle: Text('${_distanceKm()!.toStringAsFixed(2)} km'),
-              ),
-            ),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _openExternalMaps,
-              icon: const Icon(Icons.map_outlined),
-              label: const Text('Open in Google Maps'),
-            ),
-          ),
+          _buildTutorCard(),
+          const SizedBox(height: 24),
+          _buildLocationCard(),
+          const SizedBox(height: 24),
+          _buildMapPlaceholder(),
+          const SizedBox(height: 24),
+          _buildActionButtons(),
         ],
       ),
     );
   }
-}
 
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final Future<void> Function() onOpenMaps;
-
-  const _ErrorView({required this.message, required this.onOpenMaps});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
+  Widget _buildTutorCard() {
+    return Card(
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            Icon(Icons.location_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: Colors.grey[700]),
-              textAlign: TextAlign.center,
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: Theme.of(context).primaryColor,
+              child: Text(
+                widget.tutor.name.isNotEmpty
+                    ? widget.tutor.name[0].toUpperCase()
+                    : 'T',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: onOpenMaps,
-              icon: const Icon(Icons.map_outlined),
-              label: const Text('Open in Google Maps'),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.tutor.name,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (widget.tutor.subjects?.isNotEmpty == true)
+                    Text(
+                      widget.tutor.subjects!.join(', '),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLocationCard() {
+    final addressParts = <String>[];
+    if (widget.tutor.address?.trim().isNotEmpty == true) {
+      addressParts.add(widget.tutor.address!.trim());
+    }
+    if (widget.tutor.city?.trim().isNotEmpty == true) {
+      addressParts.add(widget.tutor.city!.trim());
+    }
+    if (widget.tutor.country?.trim().isNotEmpty == true) {
+      addressParts.add(widget.tutor.country!.trim());
+    }
+
+    final fullAddress = addressParts.join(', ');
+
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.location_on, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  'Location',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              fullAddress.isNotEmpty ? fullAddress : 'Address not available',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapPlaceholder() {
+    return Card(
+      elevation: 2,
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.map, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Interactive Map',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap "Open in Google Maps" to view on map',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _openExternalMaps,
+            icon: const Icon(Icons.map),
+            label: const Text('Open in Google Maps'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

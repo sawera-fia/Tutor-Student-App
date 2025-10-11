@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/user_model.dart';
 import '../application/student_dashboard_state.dart';
-import '../widgets/tutor_card.dart';
+import '../widgets/enhanced_tutor_card.dart';
 import '../widgets/filter_bottom_sheet.dart';
 
 class StudentDashboardScreen extends ConsumerStatefulWidget {
@@ -215,7 +215,7 @@ class _StudentDashboardScreenState
                 final tutor = tutors[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: TutorCard(
+                  child: EnhancedTutorCard(
                     tutor: tutor,
                     onTap: () => _showTutorDetails(tutor),
                   ),

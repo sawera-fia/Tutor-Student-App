@@ -1,15 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/user_model.dart';
 import '../data/student_dashboard_service.dart';
 
 // Service provider
-final studentDashboardServiceProvider = Provider<StudentDashboardService>((ref) {
+final studentDashboardServiceProvider = Provider<StudentDashboardService>((
+  ref,
+) {
   return StudentDashboardService();
 });
 
 // Dashboard state notifier
-class StudentDashboardNotifier extends StateNotifier<AsyncValue<List<UserModel>>> {
+class StudentDashboardNotifier
+    extends StateNotifier<AsyncValue<List<UserModel>>> {
   final StudentDashboardService _service;
 
   StudentDashboardNotifier(this._service) : super(const AsyncValue.loading());
@@ -58,7 +60,11 @@ class StudentDashboardNotifier extends StateNotifier<AsyncValue<List<UserModel>>
 }
 
 // Dashboard notifier provider
-final studentDashboardNotifierProvider = StateNotifierProvider<StudentDashboardNotifier, AsyncValue<List<UserModel>>>((ref) {
-  final service = ref.watch(studentDashboardServiceProvider);
-  return StudentDashboardNotifier(service);
-});
+final studentDashboardNotifierProvider =
+    StateNotifierProvider<
+      StudentDashboardNotifier,
+      AsyncValue<List<UserModel>>
+    >((ref) {
+      final service = ref.watch(studentDashboardServiceProvider);
+      return StudentDashboardNotifier(service);
+    });

@@ -11,7 +11,7 @@ class StudyBuddyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'StudyBuddy',
+      title: 'Tutor Finding',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       routerConfig: router,

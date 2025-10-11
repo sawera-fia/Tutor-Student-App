@@ -5,7 +5,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF6366F1), // Indigo
+        seedColor: const Color.fromARGB(255, 48, 143, 99), // Indigo
         brightness: Brightness.light,
       ),
       appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),

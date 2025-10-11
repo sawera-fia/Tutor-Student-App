@@ -2,22 +2,31 @@ import 'package:flutter/material.dart';
 import '../presentation/tutor_map_screen.dart';
 import '../../../shared/models/user_model.dart';
 
-class TutorCard extends StatelessWidget {
+class EnhancedTutorCard extends StatefulWidget {
   final UserModel tutor;
   final VoidCallback onTap;
 
-  const TutorCard({super.key, required this.tutor, required this.onTap});
+  const EnhancedTutorCard({
+    super.key,
+    required this.tutor,
+    required this.onTap,
+  });
 
+  @override
+  State<EnhancedTutorCard> createState() => _EnhancedTutorCardState();
+}
+
+class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
   void _openMapScreen(BuildContext context) {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => TutorMapScreen(tutor: tutor)));
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => TutorMapScreen(tutor: widget.tutor)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -43,7 +52,9 @@ class TutorCard extends StatelessWidget {
                     radius: 30,
                     backgroundColor: Theme.of(context).primaryColor,
                     child: Text(
-                      tutor.name.isNotEmpty ? tutor.name[0].toUpperCase() : 'T',
+                      widget.tutor.name.isNotEmpty
+                          ? widget.tutor.name[0].toUpperCase()
+                          : 'T',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -60,7 +71,7 @@ class TutorCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                tutor.name,
+                                widget.tutor.name,
                                 style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
@@ -68,20 +79,20 @@ class TutorCard extends StatelessWidget {
                                     ),
                               ),
                             ),
-                            if (tutor.isPhysicalAvailable == true)
+                            if (widget.tutor.isPhysicalAvailable == true)
                               IconButton(
                                 tooltip: 'View location',
                                 onPressed: () => _openMapScreen(context),
                                 icon: const Icon(Icons.location_on_outlined),
-                                color: Colors.redAccent,
+                                color: Theme.of(context).primaryColor,
                               ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        if (tutor.subjects != null &&
-                            tutor.subjects!.isNotEmpty)
+                        if (widget.tutor.subjects != null &&
+                            widget.tutor.subjects!.isNotEmpty)
                           Text(
-                            tutor.subjects!.join(', '),
+                            widget.tutor.subjects!.join(', '),
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey[600]),
                           ),
@@ -93,9 +104,9 @@ class TutorCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              if (tutor.bio != null && tutor.bio!.isNotEmpty)
+              if (widget.tutor.bio != null && widget.tutor.bio!.isNotEmpty)
                 Text(
-                  tutor.bio!,
+                  widget.tutor.bio!,
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
@@ -107,7 +118,7 @@ class TutorCard extends StatelessWidget {
 
               Row(
                 children: [
-                  if (tutor.city != null || tutor.country != null)
+                  if (widget.tutor.city != null || widget.tutor.country != null)
                     Expanded(
                       child: Row(
                         children: [
@@ -119,7 +130,7 @@ class TutorCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              '${tutor.city ?? ''}${tutor.city != null && tutor.country != null ? ', ' : ''}${tutor.country ?? ''}',
+                              '${widget.tutor.city ?? ''}${widget.tutor.city != null && widget.tutor.country != null ? ', ' : ''}${widget.tutor.country ?? ''}',
                               style: TextStyle(
                                 color: Colors.grey[600],
                                 fontSize: 12,
@@ -133,11 +144,11 @@ class TutorCard extends StatelessWidget {
 
                   const SizedBox(width: 16),
 
-                  if (tutor.isOnlineAvailable == true ||
-                      tutor.isPhysicalAvailable == true)
+                  if (widget.tutor.isOnlineAvailable == true ||
+                      widget.tutor.isPhysicalAvailable == true)
                     Row(
                       children: [
-                        if (tutor.isOnlineAvailable == true)
+                        if (widget.tutor.isOnlineAvailable == true)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -168,10 +179,10 @@ class TutorCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                        if (tutor.isOnlineAvailable == true &&
-                            tutor.isPhysicalAvailable == true)
+                        if (widget.tutor.isOnlineAvailable == true &&
+                            widget.tutor.isPhysicalAvailable == true)
                           const SizedBox(width: 8),
-                        if (tutor.isPhysicalAvailable == true)
+                        if (widget.tutor.isPhysicalAvailable == true)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -211,11 +222,11 @@ class TutorCard extends StatelessWidget {
 
               Row(
                 children: [
-                  if (tutor.hourlyRate != null)
+                  if (widget.tutor.hourlyRate != null)
                     Row(
                       children: [
                         Text(
-                          '\$${tutor.hourlyRate!.toStringAsFixed(0)}/hr',
+                          '\$${widget.tutor.hourlyRate!.toStringAsFixed(0)}/hr',
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -225,13 +236,13 @@ class TutorCard extends StatelessWidget {
                         const SizedBox(width: 12),
                       ],
                     ),
-                  if (tutor.yearsOfExperience != null)
+                  if (widget.tutor.yearsOfExperience != null)
                     Row(
                       children: [
                         Icon(Icons.work, size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
-                          '${tutor.yearsOfExperience} yrs exp.',
+                          '${widget.tutor.yearsOfExperience} yrs exp.',
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12,
@@ -240,22 +251,22 @@ class TutorCard extends StatelessWidget {
                       ],
                     ),
                   const Spacer(),
-                  if (tutor.rating != null && tutor.rating! > 0)
+                  if (widget.tutor.rating != null && widget.tutor.rating! > 0)
                     Row(
                       children: [
                         Icon(Icons.star, size: 16, color: Colors.amber[600]),
                         const SizedBox(width: 4),
                         Text(
-                          tutor.rating!.toStringAsFixed(1),
+                          widget.tutor.rating!.toStringAsFixed(1),
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (tutor.totalReviews != null &&
-                            tutor.totalReviews! > 0)
+                        if (widget.tutor.totalReviews != null &&
+                            widget.tutor.totalReviews! > 0)
                           Text(
-                            ' (${tutor.totalReviews})',
+                            ' (${widget.tutor.totalReviews})',
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 12,

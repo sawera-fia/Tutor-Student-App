@@ -17,7 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
-  @override
+  @override 
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -117,7 +117,7 @@ Future<void> _signIn() async {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'StudyBuddy',
+                    'Tutor Finding App',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey[800],

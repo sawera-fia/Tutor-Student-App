@@ -66,9 +66,7 @@ class _StudentDashboardScreenState
   }
 
   void _applyFilters() {
-    ref
-        .read(studentDashboardNotifierProvider.notifier)
-        .applyFilters(
+    ref.read(studentDashboardNotifierProvider.notifier).applyFilters(
           subject: _selectedSubject,
           maxHourlyRate: _maxHourlyRate,
           teachingMode: _selectedTeachingMode,
@@ -103,6 +101,7 @@ class _StudentDashboardScreenState
     );
   }
 
+  // 🔹 Header Section (Welcome + Icons)
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -131,20 +130,39 @@ class _StudentDashboardScreenState
               children: [
                 Text(
                   'Welcome back!',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(color: Colors.grey[600]),
                 ),
                 Text(
                   'Find your perfect tutor',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
                 ),
               ],
             ),
           ),
+          // 💬 Chat Icon
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/chatList');
+            },
+            icon: const Icon(Icons.chat_bubble_outline),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // ⚙️ Settings Icon
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.settings),
@@ -160,6 +178,7 @@ class _StudentDashboardScreenState
     );
   }
 
+  // 🔹 Search + Filter bar
   Widget _buildSearchAndFilters() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -204,6 +223,7 @@ class _StudentDashboardScreenState
     );
   }
 
+  // 🔹 Tutor List
   Widget _buildListView(AsyncValue<List<UserModel>> dashboardState) {
     return dashboardState.when(
       data: (tutors) => tutors.isEmpty
@@ -231,16 +251,18 @@ class _StudentDashboardScreenState
             const SizedBox(height: 16),
             Text(
               'Error loading tutors',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               error.toString(),
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.grey[500]),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -251,6 +273,7 @@ class _StudentDashboardScreenState
     );
   }
 
+  // 🔹 Empty State
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -260,16 +283,18 @@ class _StudentDashboardScreenState
           const SizedBox(height: 16),
           Text(
             'No tutors found',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             'Try adjusting your filters or search criteria',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -282,6 +307,7 @@ class _StudentDashboardScreenState
     );
   }
 
+  // 🔹 Tutor Detail Snackbar (temp)
   void _showTutorDetails(UserModel tutor) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

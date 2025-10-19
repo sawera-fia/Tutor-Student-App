@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../presentation/tutor_map_screen.dart';
 import '../../../shared/models/user_model.dart';
+import '../../student/services/chat_service.dart';
+import '../../student/screens/chat_screen.dart';
 
 class EnhancedTutorCard extends StatefulWidget {
   final UserModel tutor;
@@ -18,10 +21,20 @@ class EnhancedTutorCard extends StatefulWidget {
 
 class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
   void _openMapScreen(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => TutorMapScreen(tutor: widget.tutor)),
-    );
+    if (widget.tutor.location != null && widget.tutor.location!.isNotEmpty) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => TutorMapScreen(tutor: widget.tutor)),
+      );
+    }
   }
+
+  bool get isOnline =>
+      widget.tutor.teachingMode == TeachingMode.online ||
+      widget.tutor.teachingMode == TeachingMode.both;
+
+  bool get isPhysical =>
+      widget.tutor.teachingMode == TeachingMode.physical ||
+      widget.tutor.teachingMode == TeachingMode.both;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +58,7 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              /// --- Tutor Profile Info ---
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -72,18 +86,21 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                             Expanded(
                               child: Text(
                                 widget.tutor.name,
-                                style: Theme.of(context).textTheme.titleLarge
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey[800],
                                     ),
                               ),
                             ),
-                            if (widget.tutor.isPhysicalAvailable == true)
+                            if (isPhysical)
                               IconButton(
                                 tooltip: 'View location',
                                 onPressed: () => _openMapScreen(context),
-                                icon: const Icon(Icons.location_on_outlined),
+                                icon:
+                                    const Icon(Icons.location_on_outlined),
                                 color: Theme.of(context).primaryColor,
                               ),
                           ],
@@ -93,7 +110,9 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                             widget.tutor.subjects!.isNotEmpty)
                           Text(
                             widget.tutor.subjects!.join(', '),
-                            style: Theme.of(context).textTheme.bodyMedium
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
                                 ?.copyWith(color: Colors.grey[600]),
                           ),
                       ],
@@ -104,115 +123,52 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
 
               const SizedBox(height: 16),
 
+              /// --- Tutor Bio ---
               if (widget.tutor.bio != null && widget.tutor.bio!.isNotEmpty)
                 Text(
                   widget.tutor.bio!,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Colors.grey[700]),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
 
               const SizedBox(height: 16),
 
+              /// --- Location & Mode Tags ---
               Row(
                 children: [
-                  if (widget.tutor.city != null || widget.tutor.country != null)
+                  if (widget.tutor.city != null ||
+                      widget.tutor.country != null)
                     Expanded(
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
+                          Icon(Icons.location_on,
+                              size: 16, color: Colors.grey[600]),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               '${widget.tutor.city ?? ''}${widget.tutor.city != null && widget.tutor.country != null ? ', ' : ''}${widget.tutor.country ?? ''}',
                               style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
+                                  color: Colors.grey[600], fontSize: 12),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                     ),
-
                   const SizedBox(width: 16),
-
-                  if (widget.tutor.isOnlineAvailable == true ||
-                      widget.tutor.isPhysicalAvailable == true)
+                  if (isOnline || isPhysical)
                     Row(
                       children: [
-                        if (widget.tutor.isOnlineAvailable == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.blue[200]!),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.video_call,
-                                  size: 12,
-                                  color: Colors.blue[600],
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Online',
-                                  style: TextStyle(
-                                    color: Colors.blue[600],
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        if (widget.tutor.isOnlineAvailable == true &&
-                            widget.tutor.isPhysicalAvailable == true)
+                        if (isOnline)
+                          _buildTag(context, 'Online', Colors.blue),
+                        if (isOnline && isPhysical)
                           const SizedBox(width: 8),
-                        if (widget.tutor.isPhysicalAvailable == true)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green[50],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.green[200]!),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.person_pin,
-                                  size: 12,
-                                  color: Colors.green[600],
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Physical',
-                                  style: TextStyle(
-                                    color: Colors.green[600],
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        if (isPhysical)
+                          _buildTag(context, 'Physical', Colors.green),
                       ],
                     ),
                 ],
@@ -220,41 +176,41 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
 
               const SizedBox(height: 16),
 
+              /// --- Rate, Experience, Rating ---
               Row(
                 children: [
                   if (widget.tutor.hourlyRate != null)
-                    Row(
-                      children: [
-                        Text(
-                          '\$${widget.tutor.hourlyRate!.toStringAsFixed(0)}/hr',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                        ),
-                        const SizedBox(width: 12),
-                      ],
+                    Text(
+                      '\$${widget.tutor.hourlyRate!.toStringAsFixed(0)}/hr',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
                     ),
+                  const SizedBox(width: 12),
                   if (widget.tutor.yearsOfExperience != null)
                     Row(
                       children: [
-                        Icon(Icons.work, size: 16, color: Colors.grey[600]),
+                        Icon(Icons.work,
+                            size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           '${widget.tutor.yearsOfExperience} yrs exp.',
                           style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
+                              color: Colors.grey[600], fontSize: 12),
                         ),
                       ],
                     ),
                   const Spacer(),
-                  if (widget.tutor.rating != null && widget.tutor.rating! > 0)
+                  if (widget.tutor.rating != null &&
+                      widget.tutor.rating! > 0)
                     Row(
                       children: [
-                        Icon(Icons.star, size: 16, color: Colors.amber[600]),
+                        Icon(Icons.star,
+                            size: 16, color: Colors.amber[600]),
                         const SizedBox(width: 4),
                         Text(
                           widget.tutor.rating!.toStringAsFixed(1),
@@ -263,22 +219,114 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (widget.tutor.totalReviews != null &&
-                            widget.tutor.totalReviews! > 0)
-                          Text(
-                            ' (${widget.tutor.totalReviews})',
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 12,
-                            ),
-                          ),
                       ],
                     ),
                 ],
               ),
+
+              const SizedBox(height: 20),
+
+              /// --- Chat Button ---
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () async {
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please sign in to start chat')),
+                        );
+                        return;
+                      }
+
+                      final currentUserId = user.uid;
+                      final tutorId = widget.tutor.id;
+
+                      if (tutorId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Tutor ID not found')),
+                        );
+                        return;
+                      }
+
+                      final chatService = ChatService();
+                      final chatId = await chatService.getOrCreateChat(
+                        currentUserId,
+                        tutorId,
+                      );
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(
+                            chatId: chatId,
+                            tutor: widget.tutor,
+                            currentUserId: currentUserId,
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text('Unable to start chat: $e')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline,
+                      color: Colors.white),
+                  label: const Text(
+                    'Chat with Tutor',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTag(BuildContext context, String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            label == 'Online' ? Icons.video_call : Icons.person_pin,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }

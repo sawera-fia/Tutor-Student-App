@@ -229,20 +229,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 _selectedTeachingModes.isNotEmpty
             ? _selectedTeachingModes
             : null,
-        experience: _selectedRole == UserRole.teacher
-            ? _experienceController.text.trim()
+        yearsOfExperience: _selectedRole == UserRole.teacher
+            ? int.tryParse(_experienceController.text.trim())
             : null,
         qualifications: _selectedRole == UserRole.teacher
-            ? ['Bachelor\'s Degree']
+            ? 'Bachelor\'s Degree'
             : null,
+
         university: _selectedRole == UserRole.teacher
             ? _universityController.text.trim()
             : null,
         degree: _selectedRole == UserRole.teacher
             ? _degreeController.text.trim()
-            : null,
-        yearsOfExperience: _selectedRole == UserRole.teacher
-            ? _yearsOfExperience
             : null,
         languages: _selectedLanguages.isNotEmpty ? _selectedLanguages : null,
         specializations: _selectedRole == UserRole.teacher ? 'General' : null,

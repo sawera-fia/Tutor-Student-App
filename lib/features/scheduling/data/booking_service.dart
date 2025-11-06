@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/booking_model.dart';
 import '../../../shared/models/availability_model.dart' show TeachingMode;
+import '../services/notification_service.dart';
 
 class BookingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -72,6 +73,31 @@ class BookingService {
     }).map((snap) {
       // ignore: avoid_print
       print('[BookingService.watchAcceptedForTutor] snapshot: ${snap.docs.length}');
+      return snap.docs
+          .map((d) => BookingModel.fromFirestore(d.id, d.data()))
+          .toList();
+    });
+  }
+
+  Stream<List<BookingModel>> watchAcceptedForStudent(String studentId) {
+    // ignore: avoid_print
+    print('[BookingService.watchAcceptedForStudent] studentId=$studentId');
+    return _col
+        .where('studentId', isEqualTo: studentId)
+        .where('status', isEqualTo: BookingStatus.accepted.name)
+        .orderBy('startAt')
+        .snapshots()
+        .handleError((error) {
+      // ignore: avoid_print
+      print('[BookingService.watchAcceptedForStudent] ERROR: $error');
+      if (error is FirebaseException) {
+        // ignore: avoid_print
+        print('[BookingService.watchAcceptedForStudent] FirebaseException code=${error.code} message=${error.message}');
+      }
+      throw error;
+    }).map((snap) {
+      // ignore: avoid_print
+      print('[BookingService.watchAcceptedForStudent] snapshot: ${snap.docs.length}');
       return snap.docs
           .map((d) => BookingModel.fromFirestore(d.id, d.data()))
           .toList();
@@ -212,6 +238,53 @@ class BookingService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+    
+    // Schedule notifications for both student and tutor
+    try {
+      final studentId = (data['studentId'] ?? '') as String;
+      final tutorId = (data['tutorId'] ?? '') as String;
+      final subject = (data['subject'] ?? 'Session') as String;
+      
+      // Get user names for notifications
+      final studentDoc = await _firestore.collection('users').doc(studentId).get();
+      final tutorDoc = await _firestore.collection('users').doc(tutorId).get();
+      
+      final studentName = studentDoc.exists ? (studentDoc.data()?['name'] ?? 'Student') as String : 'Student';
+      final tutorName = tutorDoc.exists ? (tutorDoc.data()?['name'] ?? 'Tutor') as String : 'Tutor';
+      
+      final notificationService = NotificationService();
+      
+      // Convert bookingId string to a numeric ID for notifications
+      final bookingIdInt = bookingId.hashCode.abs();
+      
+      // Schedule notifications for student
+      await notificationService.scheduleSessionNotifications(
+        bookingId: bookingIdInt,
+        subject: subject,
+        tutorOrStudentName: tutorName,
+        sessionStartUtc: startUtc,
+        sessionEndUtc: endUtc,
+        isStudent: true,
+      );
+      
+      // Schedule notifications for tutor (use different base to avoid conflicts)
+      await notificationService.scheduleSessionNotifications(
+        bookingId: bookingIdInt + 1000000, // Different ID base for tutor
+        subject: subject,
+        tutorOrStudentName: studentName,
+        sessionStartUtc: startUtc,
+        sessionEndUtc: endUtc,
+        isStudent: false,
+      );
+      
+      // ignore: avoid_print
+      print('[BookingService.accept] Scheduled notifications for booking $bookingId');
+    } catch (e) {
+      // ignore: avoid_print
+      print('[BookingService.accept] Error scheduling notifications: $e');
+      // Don't throw - notifications are not critical
+    }
+    
     // ignore: avoid_print
     print('[BookingService.accept] bookingId=$bookingId accepted by $actorUserId');
   }

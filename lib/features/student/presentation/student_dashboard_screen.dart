@@ -179,11 +179,11 @@ class _StudentDashboardScreenState
             ),
           ),
           const SizedBox(width: 8),
-          // 📅 My Sessions Icon
+          // 📅 My Schedule Icon
           IconButton(
             onPressed: () {
-              debugPrint('📅 My Sessions pressed → navigating to /pending-requests');
-              context.go('/pending-requests');
+              debugPrint('📅 My Schedule pressed → navigating to /student-schedule');
+              context.go('/student-schedule');
             },
             icon: const Icon(Icons.calendar_today),
             style: IconButton.styleFrom(
@@ -192,7 +192,23 @@ class _StudentDashboardScreenState
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            tooltip: 'My Sessions & Proposals',
+            tooltip: 'My Schedule',
+          ),
+          const SizedBox(width: 8),
+          // 📋 Pending Requests Icon
+          IconButton(
+            onPressed: () {
+              debugPrint('📋 Pending Requests pressed → navigating to /pending-requests');
+              context.go('/pending-requests');
+            },
+            icon: const Icon(Icons.pending_actions),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            tooltip: 'Pending Requests',
           ),
           const SizedBox(width: 8),
           // ⚙️ Settings Menu
@@ -204,7 +220,10 @@ class _StudentDashboardScreenState
                 debugPrint('👤 Profile pressed → navigating to /edit-profile');
                 context.go('/edit-profile');
               } else if (value == 'sessions') {
-                debugPrint('📅 My Sessions pressed → navigating to /pending-requests');
+                debugPrint('📅 My Sessions pressed → navigating to /student-schedule');
+                context.go('/student-schedule');
+              } else if (value == 'requests') {
+                debugPrint('📋 Pending Requests pressed → navigating to /pending-requests');
                 context.go('/pending-requests');
               } else if (value == 'settings') {
                 debugPrint('⚙️ Settings pressed (TODO: implement settings)');
@@ -228,7 +247,15 @@ class _StudentDashboardScreenState
                 value: 'sessions',
                 child: ListTile(
                   leading: Icon(Icons.calendar_today),
-                  title: Text('My Sessions'),
+                  title: Text('My Schedule'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'requests',
+                child: ListTile(
+                  leading: Icon(Icons.pending_actions),
+                  title: Text('Pending Requests'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

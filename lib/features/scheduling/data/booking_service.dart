@@ -30,19 +30,38 @@ class BookingService {
     required DateTime endUtc,
   }) async {
     final statuses = ['pending', 'accepted'];
-    final q = await _col
-        .where('tutorId', isEqualTo: tutorId)
-        .where('status', whereIn: statuses)
-        .where('startAt', isLessThan: Timestamp.fromDate(endUtc))
-        .get();
-    for (final doc in q.docs) {
-      final data = doc.data();
-      final s = (data['startAt'] as Timestamp).toDate().toUtc();
-      final e = (data['endAt'] as Timestamp).toDate().toUtc();
-      final overlaps = s.isBefore(endUtc) && e.isAfter(startUtc);
-      if (overlaps) return true;
+    try {
+      // Debug: show params
+      // ignore: avoid_print
+      print('[BookingService._hasConflict] tutorId=$tutorId start=$startUtc end=$endUtc');
+      final q = await _col
+          .where('tutorId', isEqualTo: tutorId)
+          .where('status', whereIn: statuses)
+          .where('startAt', isLessThan: Timestamp.fromDate(endUtc))
+          .get();
+      // ignore: avoid_print
+      print('[BookingService._hasConflict] fetched=${q.docs.length}');
+      for (final doc in q.docs) {
+        final data = doc.data();
+        final s = (data['startAt'] as Timestamp).toDate().toUtc();
+        final e = (data['endAt'] as Timestamp).toDate().toUtc();
+        final overlaps = s.isBefore(endUtc) && e.isAfter(startUtc);
+        if (overlaps) {
+          // ignore: avoid_print
+          print('[BookingService._hasConflict] overlap with ${doc.id} ($s - $e)');
+          return true;
+        }
+      }
+      return false;
+    } on FirebaseException catch (e) {
+      // ignore: avoid_print
+      print('[BookingService._hasConflict] FirebaseException code=${e.code} message=${e.message}');
+      rethrow;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[BookingService._hasConflict] Unexpected error: $e');
+      rethrow;
     }
-    return false;
   }
 
   Future<String> createRequest({
@@ -56,33 +75,48 @@ class BookingService {
     required int priceCents,
     String currency = 'USD',
   }) async {
-    if (await _hasConflict(
-      tutorId: tutorId,
-      startUtc: startAtUtc,
-      endUtc: endAtUtc,
-    )) {
-      throw Exception('Time slot is no longer available.');
-    }
+    // Debug input
+    // ignore: avoid_print
+    print('[BookingService.createRequest] initiator=$initiatorId student=$studentId tutor=$tutorId subject=$subject mode=${mode.name} start=$startAtUtc end=$endAtUtc priceCents=$priceCents');
+    try {
+      if (await _hasConflict(
+        tutorId: tutorId,
+        startUtc: startAtUtc,
+        endUtc: endAtUtc,
+      )) {
+        throw Exception('Time slot is no longer available.');
+      }
 
-    final now = FieldValue.serverTimestamp();
-    final requiresAcceptanceBy = initiatorId == tutorId ? studentId : tutorId;
-    final doc = await _col.add({
-      'studentId': studentId,
-      'tutorId': tutorId,
-      'participants': [studentId, tutorId],
-      'subject': subject,
-      'mode': mode.name,
-      'startAt': Timestamp.fromDate(startAtUtc.toUtc()),
-      'endAt': Timestamp.fromDate(endAtUtc.toUtc()),
-      'status': BookingStatus.pending.name,
-      'priceCents': priceCents,
-      'currency': currency,
-      'initiatorId': initiatorId,
-      'requiresAcceptanceBy': requiresAcceptanceBy,
-      'createdAt': now,
-      'updatedAt': now,
-    });
-    return doc.id;
+      final now = FieldValue.serverTimestamp();
+      final requiresAcceptanceBy = initiatorId == tutorId ? studentId : tutorId;
+      final doc = await _col.add({
+        'studentId': studentId,
+        'tutorId': tutorId,
+        'participants': [studentId, tutorId],
+        'subject': subject,
+        'mode': mode.name,
+        'startAt': Timestamp.fromDate(startAtUtc.toUtc()),
+        'endAt': Timestamp.fromDate(endAtUtc.toUtc()),
+        'status': BookingStatus.pending.name,
+        'priceCents': priceCents,
+        'currency': currency,
+        'initiatorId': initiatorId,
+        'requiresAcceptanceBy': requiresAcceptanceBy,
+        'createdAt': now,
+        'updatedAt': now,
+      });
+      // ignore: avoid_print
+      print('[BookingService.createRequest] created booking ${doc.id}');
+      return doc.id;
+    } on FirebaseException catch (e) {
+      // ignore: avoid_print
+      print('[BookingService.createRequest] FirebaseException code=${e.code} message=${e.message}');
+      rethrow;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[BookingService.createRequest] Unexpected error: $e');
+      rethrow;
+    }
   }
 
   Future<void> accept(String bookingId, String actorUserId) async {
@@ -106,6 +140,8 @@ class BookingService {
         'status': BookingStatus.accepted.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      // ignore: avoid_print
+      print('[BookingService.accept] bookingId=$bookingId accepted by $actorUserId');
     });
   }
 
@@ -121,6 +157,8 @@ class BookingService {
       if (reason != null) 'cancelReason': reason,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    // ignore: avoid_print
+    print('[BookingService.decline] bookingId=$bookingId declined by $actorUserId reason=${reason ?? ''}');
   }
 
   Future<void> cancel(String bookingId, String actorUserId, {String? reason}) async {
@@ -134,6 +172,8 @@ class BookingService {
       if (reason != null) 'cancelReason': reason,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    // ignore: avoid_print
+    print('[BookingService.cancel] bookingId=$bookingId cancelled by $actorUserId reason=${reason ?? ''}');
   }
 
   Future<void> reschedule({
@@ -159,6 +199,8 @@ class BookingService {
       'status': BookingStatus.pending.name, // require re-accept
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    // ignore: avoid_print
+    print('[BookingService.reschedule] bookingId=$bookingId requested by $requesterId newStart=$newStartUtc newEnd=$newEndUtc');
   }
 }
 

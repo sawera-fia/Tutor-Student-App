@@ -140,6 +140,8 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
     }
 
     try {
+      // ignore: avoid_print
+      print('[RequestSessionSheet] submitting tutor=${widget.tutor.id} subject=$_subject mode=${_mode?.name} start=$startUtc end=$endUtc priceCents=${priceCents * 100}');
       final bookingService = ref.read(bookingServiceProvider);
       await bookingService.createRequest(
         initiatorId: user.uid,
@@ -159,6 +161,8 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
         );
       }
     } catch (e) {
+      // ignore: avoid_print
+      print('[RequestSessionSheet] error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to create request: $e')),
       );

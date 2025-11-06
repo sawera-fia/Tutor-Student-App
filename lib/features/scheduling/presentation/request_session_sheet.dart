@@ -191,107 +191,108 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Request Session',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _subject,
-                  items: (widget.tutor.subjects ?? ['General'])
-                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                      .toList(),
-                  decoration: const InputDecoration(labelText: 'Subject'),
-                  onChanged: (v) => setState(() => _subject = v),
-                  validator: (v) => v == null || v.isEmpty ? 'Select subject' : null,
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<avail_models.TeachingMode>(
-                  value: _mode,
-                  items: _modeItems(),
-                  decoration: const InputDecoration(labelText: 'Mode'),
-                  onChanged: (v) => setState(() => _mode = v),
-                  // Optional: no validator, defaults intelligently
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: const InputDecoration(labelText: 'Date'),
-                        controller: TextEditingController(
-                          text: _date == null
-                              ? ''
-                              : '${_date!.year}-${_date!.month.toString().padLeft(2, '0')}-${_date!.day.toString().padLeft(2, '0')}',
-                        ),
-                        onTap: _pickDate,
-                        validator: (_) => _date == null ? 'Pick date' : null,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Request Session',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        readOnly: true,
-                        decoration: const InputDecoration(labelText: 'Time'),
-                        controller: TextEditingController(
-                          text: _time == null
-                              ? ''
-                              : _time!.format(context),
-                        ),
-                        onTap: _pickTime,
-                        validator: (_) => _time == null ? 'Pick time' : null,
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        value: _durationMinutes,
-                        items: const [30, 45, 60, 90, 120]
-                            .map((m) => DropdownMenuItem(value: m, child: Text('$m min')))
-                            .toList(),
-                        decoration: const InputDecoration(labelText: 'Duration'),
-                        onChanged: (v) => _onDurationChanged(v ?? 60),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _priceController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Price (USD)'),
-                        validator: (v) {
-                          final n = int.tryParse(v ?? '');
-                          if (n == null || n <= 0) return 'Enter valid price';
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text('Send Request'),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16), // Extra padding at bottom
-              ],
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _subject,
+                    items: (widget.tutor.subjects ?? ['General'])
+                        .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                        .toList(),
+                    decoration: const InputDecoration(labelText: 'Subject'),
+                    onChanged: (v) => setState(() => _subject = v),
+                    validator: (v) => v == null || v.isEmpty ? 'Select subject' : null,
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<avail_models.TeachingMode>(
+                    value: _mode,
+                    items: _modeItems(),
+                    decoration: const InputDecoration(labelText: 'Mode'),
+                    onChanged: (v) => setState(() => _mode = v),
+                    // Optional: no validator, defaults intelligently
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: const InputDecoration(labelText: 'Date'),
+                          controller: TextEditingController(
+                            text: _date == null
+                                ? ''
+                                : '${_date!.year}-${_date!.month.toString().padLeft(2, '0')}-${_date!.day.toString().padLeft(2, '0')}',
+                          ),
+                          onTap: _pickDate,
+                          validator: (_) => _date == null ? 'Pick date' : null,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: const InputDecoration(labelText: 'Time'),
+                          controller: TextEditingController(
+                            text: _time == null
+                                ? ''
+                                : _time!.format(context),
+                          ),
+                          onTap: _pickTime,
+                          validator: (_) => _time == null ? 'Pick time' : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          value: _durationMinutes,
+                          items: const [30, 45, 60, 90, 120]
+                              .map((m) => DropdownMenuItem(value: m, child: Text('$m min')))
+                              .toList(),
+                          decoration: const InputDecoration(labelText: 'Duration'),
+                          onChanged: (v) => _onDurationChanged(v ?? 60),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Price (USD)'),
+                          validator: (v) {
+                            final n = int.tryParse(v ?? '');
+                            if (n == null || n <= 0) return 'Enter valid price';
+                            return null;
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _submit,
+                      child: const Text('Send Request'),
+                    ),
+                  ),
+                  const SizedBox(height: 16), // Extra padding at bottom
+                ],
+              ),
             ),
           ),
         ),

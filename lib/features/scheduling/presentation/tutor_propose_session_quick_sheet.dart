@@ -114,42 +114,45 @@ class _TutorProposeSessionQuickSheetState extends ConsumerState<TutorProposeSess
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Propose Session', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Propose Session', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 8),
+                if (!isTutor)
+                  const Text('Only tutors can propose sessions', style: TextStyle(color: Colors.red)),
+                TextField(
+                  controller: _controller,
+                  decoration: const InputDecoration(
+                    labelText: 'Student email or ID',
+                    prefixIcon: Icon(Icons.person_search),
+                  ),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(_error!, style: const TextStyle(color: Colors.red)),
+                ],
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _loading || !isTutor ? null : _findAndOpen,
+                    icon: _loading
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.search),
+                    label: const Text('Find Student'),
+                  ),
+                ),
+                const SizedBox(height: 16), // Extra padding for mobile
               ],
             ),
-            const SizedBox(height: 8),
-            if (!isTutor)
-              const Text('Only tutors can propose sessions', style: TextStyle(color: Colors.red)),
-            TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                labelText: 'Student email or ID',
-                prefixIcon: Icon(Icons.person_search),
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(_error!, style: const TextStyle(color: Colors.red)),
-            ],
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _loading || !isTutor ? null : _findAndOpen,
-                icon: _loading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.search),
-                label: const Text('Find Student'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

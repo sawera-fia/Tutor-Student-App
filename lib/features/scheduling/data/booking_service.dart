@@ -82,12 +82,13 @@ class BookingService {
     required String tutorId,
     required DateTime startUtc,
     required DateTime endUtc,
+    String? excludeBookingId,
   }) async {
     final statuses = ['pending', 'accepted'];
     try {
       // Debug: show params
       // ignore: avoid_print
-      print('[BookingService._hasConflict] tutorId=$tutorId start=$startUtc end=$endUtc');
+      print('[BookingService._hasConflict] tutorId=$tutorId start=$startUtc end=$endUtc exclude=$excludeBookingId');
       final q = await _col
           .where('tutorId', isEqualTo: tutorId)
           .where('status', whereIn: statuses)
@@ -96,6 +97,12 @@ class BookingService {
       // ignore: avoid_print
       print('[BookingService._hasConflict] fetched=${q.docs.length}');
       for (final doc in q.docs) {
+        // Skip the booking we're checking (when accepting, exclude itself)
+        if (excludeBookingId != null && doc.id == excludeBookingId) {
+          // ignore: avoid_print
+          print('[BookingService._hasConflict] skipping excluded booking ${doc.id}');
+          continue;
+        }
         final data = doc.data();
         final s = (data['startAt'] as Timestamp).toDate().toUtc();
         final e = (data['endAt'] as Timestamp).toDate().toUtc();
@@ -189,7 +196,7 @@ class BookingService {
     final tutorId = (data['tutorId'] ?? '') as String;
 
     // Check conflicts BEFORE transaction to avoid async inside tx
-    if (await _hasConflict(tutorId: tutorId, startUtc: startUtc, endUtc: endUtc)) {
+    if (await _hasConflict(tutorId: tutorId, startUtc: startUtc, endUtc: endUtc, excludeBookingId: bookingId)) {
       throw Exception('Time slot now conflicts');
     }
 

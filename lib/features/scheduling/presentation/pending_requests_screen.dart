@@ -124,22 +124,42 @@ class _RequestsList extends ConsumerWidget {
                   children: [
                     TextButton(
                       onPressed: () async {
-                        await bookingService.accept(b.id, currentUser.id);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Request accepted')),
-                          );
+                        try {
+                          await bookingService.accept(b.id, currentUser.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Request accepted')),
+                            );
+                          }
+                        } catch (e) {
+                          // ignore: avoid_print
+                          print('[PendingRequestsScreen] accept error: $e');
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Unable to accept: $e')),
+                            );
+                          }
                         }
                       },
                       child: const Text('Accept'),
                     ),
                     TextButton(
                       onPressed: () async {
-                        await bookingService.decline(b.id, currentUser.id);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Request declined')),
-                          );
+                        try {
+                          await bookingService.decline(b.id, currentUser.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Request declined')),
+                            );
+                          }
+                        } catch (e) {
+                          // ignore: avoid_print
+                          print('[PendingRequestsScreen] decline error: $e');
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Unable to decline: $e')),
+                            );
+                          }
                         }
                       },
                       child: const Text('Decline'),

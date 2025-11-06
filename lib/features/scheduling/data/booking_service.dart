@@ -174,29 +174,39 @@ class BookingService {
   }
 
   Future<void> accept(String bookingId, String actorUserId) async {
+    final ref = _col.doc(bookingId);
+    final snap = await ref.get();
+    if (!snap.exists) throw Exception('Booking not found');
+    final data = snap.data()!;
+    if ((data['requiresAcceptanceBy'] ?? '') != actorUserId) {
+      throw Exception('Not authorized to accept');
+    }
+    if ((data['status'] ?? '') != BookingStatus.pending.name) {
+      throw Exception('Booking is not pending');
+    }
+    final startUtc = (data['startAt'] as Timestamp).toDate().toUtc();
+    final endUtc = (data['endAt'] as Timestamp).toDate().toUtc();
+    final tutorId = (data['tutorId'] ?? '') as String;
+
+    // Check conflicts BEFORE transaction to avoid async inside tx
+    if (await _hasConflict(tutorId: tutorId, startUtc: startUtc, endUtc: endUtc)) {
+      throw Exception('Time slot now conflicts');
+    }
+
     await _firestore.runTransaction((tx) async {
-      final ref = _col.doc(bookingId);
-      final snap = await tx.get(ref);
-      if (!snap.exists) throw Exception('Booking not found');
-      final data = snap.data()!;
-      if ((data['requiresAcceptanceBy'] ?? '') != actorUserId) {
-        throw Exception('Not authorized to accept');
+      final latest = await tx.get(ref);
+      if (!latest.exists) throw Exception('Booking not found');
+      final latestStatus = (latest['status'] ?? '') as String;
+      if (latestStatus != BookingStatus.pending.name) {
+        throw Exception('Booking already updated');
       }
-      final startUtc = (data['startAt'] as Timestamp).toDate().toUtc();
-      final endUtc = (data['endAt'] as Timestamp).toDate().toUtc();
-      final hasConflict = await _hasConflict(
-        tutorId: (data['tutorId'] ?? '') as String,
-        startUtc: startUtc,
-        endUtc: endUtc,
-      );
-      if (hasConflict) throw Exception('Time slot now conflicts');
       tx.update(ref, {
         'status': BookingStatus.accepted.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      // ignore: avoid_print
-      print('[BookingService.accept] bookingId=$bookingId accepted by $actorUserId');
     });
+    // ignore: avoid_print
+    print('[BookingService.accept] bookingId=$bookingId accepted by $actorUserId');
   }
 
   Future<void> decline(String bookingId, String actorUserId, {String? reason}) async {

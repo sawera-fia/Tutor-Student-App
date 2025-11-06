@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/application/auth_state.dart';
 import '../application/scheduling_providers.dart';
 import '../../../shared/models/booking_model.dart';
+import '../../../shared/models/user_model.dart';
 
 class TutorScheduleScreen extends ConsumerWidget {
   const TutorScheduleScreen({super.key});

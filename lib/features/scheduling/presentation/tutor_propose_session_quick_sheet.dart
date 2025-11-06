@@ -35,24 +35,15 @@ class _TutorProposeSessionQuickSheetState extends ConsumerState<TutorProposeSess
         return;
       }
 
-      QuerySnapshot<Map<String, dynamic>> q;
+      UserModel? student;
       final users = FirebaseFirestore.instance.collection('users');
       if (input.contains('@')) {
-        q = await users.where('email', isEqualTo: input).limit(1).get();
-      } else {
-        final doc = await users.doc(input).get();
-        if (!doc.exists) {
-          setState(() => _error = 'No user found with that ID');
+        // Search by email
+        final q = await users.where('email', isEqualTo: input).limit(1).get();
+        if (q.docs.isEmpty) {
+          setState(() => _error = 'No user found with that email');
           return;
         }
-        q = QuerySnapshot<Map<String, dynamic>>.fromQuerySnapshot(
-          // This is a hacky placeholder; instead, just handle doc.exists path directly below
-          throw UnimplementedError(),
-        );
-      }
-
-      UserModel? student;
-      if (q.docs.isNotEmpty) {
         final d = q.docs.first;
         final data = d.data();
         student = UserModel.fromJson({
@@ -62,8 +53,19 @@ class _TutorProposeSessionQuickSheetState extends ConsumerState<TutorProposeSess
           'updatedAt': data['updatedAt'],
         });
       } else {
-        setState(() => _error = 'No user found');
-        return;
+        // Search by ID
+        final doc = await users.doc(input).get();
+        if (!doc.exists) {
+          setState(() => _error = 'No user found with that ID');
+          return;
+        }
+        final data = doc.data()!;
+        student = UserModel.fromJson({
+          ...data,
+          'id': doc.id,
+          'createdAt': data['createdAt'],
+          'updatedAt': data['updatedAt'],
+        });
       }
 
       if (student.role != UserRole.student) {

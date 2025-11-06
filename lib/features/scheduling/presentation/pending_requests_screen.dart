@@ -138,9 +138,11 @@ class _RequestsList extends ConsumerWidget {
         return FutureBuilder<DocumentSnapshot>(
           future: FirebaseFirestore.instance.collection('users').doc(counterpartId).get(),
           builder: (context, snapshot) {
-            final counterpartName = snapshot.hasData && snapshot.data!.exists
-                ? (snapshot.data!.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown'
-                : 'Loading...';
+            String counterpartName = 'Loading...';
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final data = snapshot.data!.data() as Map<String, dynamic>?;
+              counterpartName = data?['name'] as String? ?? 'Unknown';
+            }
             
             return ListTile(
               leading: CircleAvatar(

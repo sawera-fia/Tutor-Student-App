@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import '../presentation/tutor_map_screen.dart';
 import '../../../shared/models/user_model.dart';
-import '../../student/services/chat_service.dart';
-import '../../student/screens/chat_screen.dart';
+import '../../chat/services/chat_service.dart';
 
 class EnhancedTutorCard extends StatefulWidget {
   final UserModel tutor;
@@ -86,9 +86,7 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                             Expanded(
                               child: Text(
                                 widget.tutor.name,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
+                                style: Theme.of(context).textTheme.titleLarge
                                     ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.grey[800],
@@ -99,8 +97,7 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                               IconButton(
                                 tooltip: 'View location',
                                 onPressed: () => _openMapScreen(context),
-                                icon:
-                                    const Icon(Icons.location_on_outlined),
+                                icon: const Icon(Icons.location_on_outlined),
                                 color: Theme.of(context).primaryColor,
                               ),
                           ],
@@ -110,9 +107,7 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                             widget.tutor.subjects!.isNotEmpty)
                           Text(
                             widget.tutor.subjects!.join(', '),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.grey[600]),
                           ),
                       ],
@@ -127,10 +122,9 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
               if (widget.tutor.bio != null && widget.tutor.bio!.isNotEmpty)
                 Text(
                   widget.tutor.bio!,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Colors.grey[700]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -140,19 +134,23 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
               /// --- Location & Mode Tags ---
               Row(
                 children: [
-                  if (widget.tutor.city != null ||
-                      widget.tutor.country != null)
+                  if (widget.tutor.city != null || widget.tutor.country != null)
                     Expanded(
                       child: Row(
                         children: [
-                          Icon(Icons.location_on,
-                              size: 16, color: Colors.grey[600]),
+                          Icon(
+                            Icons.location_on,
+                            size: 16,
+                            color: Colors.grey[600],
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               '${widget.tutor.city ?? ''}${widget.tutor.city != null && widget.tutor.country != null ? ', ' : ''}${widget.tutor.country ?? ''}',
                               style: TextStyle(
-                                  color: Colors.grey[600], fontSize: 12),
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -163,10 +161,8 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                   if (isOnline || isPhysical)
                     Row(
                       children: [
-                        if (isOnline)
-                          _buildTag(context, 'Online', Colors.blue),
-                        if (isOnline && isPhysical)
-                          const SizedBox(width: 8),
+                        if (isOnline) _buildTag(context, 'Online', Colors.blue),
+                        if (isOnline && isPhysical) const SizedBox(width: 8),
                         if (isPhysical)
                           _buildTag(context, 'Physical', Colors.green),
                       ],
@@ -182,35 +178,31 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                   if (widget.tutor.hourlyRate != null)
                     Text(
                       '\$${widget.tutor.hourlyRate!.toStringAsFixed(0)}/hr',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).primaryColor,
-                          ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                   const SizedBox(width: 12),
                   if (widget.tutor.yearsOfExperience != null)
                     Row(
                       children: [
-                        Icon(Icons.work,
-                            size: 16, color: Colors.grey[600]),
+                        Icon(Icons.work, size: 16, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           '${widget.tutor.yearsOfExperience} yrs exp.',
                           style: TextStyle(
-                              color: Colors.grey[600], fontSize: 12),
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
                   const Spacer(),
-                  if (widget.tutor.rating != null &&
-                      widget.tutor.rating! > 0)
+                  if (widget.tutor.rating != null && widget.tutor.rating! > 0)
                     Row(
                       children: [
-                        Icon(Icons.star,
-                            size: 16, color: Colors.amber[600]),
+                        Icon(Icons.star, size: 16, color: Colors.amber[600]),
                         const SizedBox(width: 4),
                         Text(
                           widget.tutor.rating!.toStringAsFixed(1),
@@ -235,8 +227,7 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   onPressed: () async {
                     try {
@@ -244,7 +235,8 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                       if (user == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Please sign in to start chat')),
+                            content: Text('Please sign in to start chat'),
+                          ),
                         );
                         return;
                       }
@@ -254,8 +246,7 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
 
                       if (tutorId.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Tutor ID not found')),
+                          const SnackBar(content: Text('Tutor ID not found')),
                         );
                         return;
                       }
@@ -266,25 +257,24 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                         tutorId,
                       );
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatScreen(
-                            chatId: chatId,
-                            tutor: widget.tutor,
-                            currentUserId: currentUserId,
-                          ),
-                        ),
+                      context.go(
+                        '/chatScreen',
+                        extra: {
+                          'chatId': chatId,
+                          'tutor': widget.tutor,
+                          'currentUserId': currentUserId,
+                        },
                       );
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Unable to start chat: $e')),
+                        SnackBar(content: Text('Unable to start chat: $e')),
                       );
                     }
                   },
-                  icon: const Icon(Icons.chat_bubble_outline,
-                      color: Colors.white),
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    color: Colors.white,
+                  ),
                   label: const Text(
                     'Chat with Tutor',
                     style: TextStyle(

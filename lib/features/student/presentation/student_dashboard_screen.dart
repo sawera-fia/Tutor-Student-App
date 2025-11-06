@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../shared/models/user_model.dart';
+import '../../auth/application/auth_state.dart';
 import '../application/student_dashboard_state.dart';
 import '../widgets/enhanced_tutor_card.dart';
 import '../widgets/filter_bottom_sheet.dart';
@@ -27,20 +29,29 @@ class _StudentDashboardScreenState
   @override
   void initState() {
     super.initState();
+    debugPrint('📱 StudentDashboardScreen initialized');
     _loadTutors();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    debugPrint('🧹 Disposing StudentDashboardScreen');
     super.dispose();
   }
 
   Future<void> _loadTutors() async {
-    await ref.read(studentDashboardNotifierProvider.notifier).loadTutors();
+    debugPrint('🔄 Loading tutors...');
+    try {
+      await ref.read(studentDashboardNotifierProvider.notifier).loadTutors();
+      debugPrint('✅ Tutors loaded successfully');
+    } catch (e) {
+      debugPrint('❌ Error while loading tutors: $e');
+    }
   }
 
   void _showFilters() {
+    debugPrint('🎛 Opening filter bottom sheet');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -52,6 +63,7 @@ class _StudentDashboardScreenState
         selectedLocation: _selectedLocation,
         maxDistance: _maxDistance,
         onApplyFilters: (filters) {
+          debugPrint('✅ Filters applied: $filters');
           setState(() {
             _selectedSubject = filters['subject'];
             _maxHourlyRate = filters['maxHourlyRate'];
@@ -66,7 +78,12 @@ class _StudentDashboardScreenState
   }
 
   void _applyFilters() {
-    ref.read(studentDashboardNotifierProvider.notifier).applyFilters(
+    debugPrint(
+      '🔍 Applying filters: subject=$_selectedSubject, rate=$_maxHourlyRate, mode=$_selectedTeachingMode, location=$_selectedLocation, distance=$_maxDistance',
+    );
+    ref
+        .read(studentDashboardNotifierProvider.notifier)
+        .applyFilters(
           subject: _selectedSubject,
           maxHourlyRate: _maxHourlyRate,
           teachingMode: _selectedTeachingMode,
@@ -76,7 +93,9 @@ class _StudentDashboardScreenState
   }
 
   void _searchTutors(String query) {
+    debugPrint('🔎 Searching tutors for query: "$query"');
     if (query.trim().isEmpty) {
+      debugPrint('🧹 Empty query → reloading all tutors');
       _loadTutors();
     } else {
       ref.read(studentDashboardNotifierProvider.notifier).searchTutors(query);
@@ -86,6 +105,7 @@ class _StudentDashboardScreenState
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(studentDashboardNotifierProvider);
+    debugPrint('🧩 Building StudentDashboardScreen');
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -130,20 +150,16 @@ class _StudentDashboardScreenState
               children: [
                 Text(
                   'Welcome back!',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
                 ),
                 Text(
                   'Find your perfect tutor',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
-                      ),
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
                 ),
               ],
             ),
@@ -151,7 +167,8 @@ class _StudentDashboardScreenState
           // 💬 Chat Icon
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/chatList');
+              debugPrint('💬 Chat icon pressed → navigating to /chatList');
+              context.go('/chatList');
             },
             icon: const Icon(Icons.chat_bubble_outline),
             style: IconButton.styleFrom(
@@ -162,16 +179,58 @@ class _StudentDashboardScreenState
             ),
           ),
           const SizedBox(width: 8),
-          // ⚙️ Settings Icon
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.settings),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey[100],
-              shape: RoundedRectangleBorder(
+          // ⚙️ Settings Menu
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'logout') {
+                ref.read(authNotifierProvider.notifier).signOut();
+              } else if (value == 'profile') {
+                debugPrint('👤 Profile pressed → navigating to /edit-profile');
+                context.go('/edit-profile');
+              } else if (value == 'settings') {
+                debugPrint('⚙️ Settings pressed (TODO: implement settings)');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Settings feature coming soon!'),
+                  ),
+                );
+              }
+            },
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(12),
               ),
+              child: const Icon(Icons.more_vert, color: Colors.grey),
             ),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'profile',
+                child: ListTile(
+                  leading: Icon(Icons.person),
+                  title: Text('Profile'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  leading: Icon(Icons.settings),
+                  title: Text('Settings'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: ListTile(
+                  leading: Icon(Icons.logout, color: Colors.red),
+                  title: Text('Logout', style: TextStyle(color: Colors.red)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -226,55 +285,66 @@ class _StudentDashboardScreenState
   // 🔹 Tutor List
   Widget _buildListView(AsyncValue<List<UserModel>> dashboardState) {
     return dashboardState.when(
-      data: (tutors) => tutors.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: tutors.length,
-              itemBuilder: (context, index) {
-                final tutor = tutors[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: EnhancedTutorCard(
-                    tutor: tutor,
-                    onTap: () => _showTutorDetails(tutor),
-                  ),
-                );
-              },
-            ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Error loading tutors',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error.toString(),
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: Colors.grey[500]),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadTutors, child: const Text('Retry')),
-          ],
-        ),
-      ),
+      data: (tutors) {
+        debugPrint('📋 Tutor list loaded: ${tutors.length} tutors found');
+        return tutors.isEmpty
+            ? _buildEmptyState()
+            : ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: tutors.length,
+                itemBuilder: (context, index) {
+                  final tutor = tutors[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: EnhancedTutorCard(
+                      tutor: tutor,
+                      onTap: () => _showTutorDetails(tutor),
+                    ),
+                  );
+                },
+              );
+      },
+      loading: () {
+        debugPrint('⏳ Tutors are loading...');
+        return const Center(child: CircularProgressIndicator());
+      },
+      error: (error, stack) {
+        debugPrint('❌ Dashboard error: $error');
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading tutors',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.toString(),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadTutors,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   // 🔹 Empty State
   Widget _buildEmptyState() {
+    debugPrint('📭 No tutors found – showing empty state');
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -283,18 +353,16 @@ class _StudentDashboardScreenState
           const SizedBox(height: 16),
           Text(
             'No tutors found',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
             'Try adjusting your filters or search criteria',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: Colors.grey[500]),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
@@ -309,12 +377,14 @@ class _StudentDashboardScreenState
 
   // 🔹 Tutor Detail Snackbar (temp)
   void _showTutorDetails(UserModel tutor) {
+    debugPrint('👤 Tutor tapped: ${tutor.name}');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Viewing details for ${tutor.name}'),
         action: SnackBarAction(
           label: 'View Profile',
           onPressed: () {
+            debugPrint('➡️ Navigating to profile of ${tutor.name}');
             // TODO: Navigate to tutor profile
           },
         ),

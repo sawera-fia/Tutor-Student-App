@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/application/auth_state.dart';
 import '../../../shared/models/user_model.dart';
 
 class TutorDashboard extends ConsumerWidget {
   const TutorDashboard({super.key});
+
+  double _calculateProfileCompletion(UserModel user) {
+    int completedFields = 0;
+    int totalFields = 5; // Total fields to complete for tutors
+
+    // Check each field
+    if (user.bio != null && user.bio!.isNotEmpty) completedFields++;
+    if (user.subjects != null && user.subjects!.isNotEmpty) completedFields++;
+    if (user.hourlyRate != null && user.hourlyRate! > 0) completedFields++;
+    if (user.city != null && user.city!.isNotEmpty) completedFields++;
+    if (user.teachingModes != null && user.teachingModes!.isNotEmpty)
+      completedFields++;
+
+    return completedFields / totalFields;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,6 +47,14 @@ class TutorDashboard extends ConsumerWidget {
             onSelected: (value) {
               if (value == 'logout') {
                 ref.read(authNotifierProvider.notifier).signOut();
+              } else if (value == 'profile') {
+                context.go('/edit-profile');
+              } else if (value == 'settings') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Settings feature coming soon!'),
+                  ),
+                );
               }
             },
             itemBuilder: (context) => [
@@ -118,20 +142,22 @@ class TutorDashboard extends ConsumerWidget {
                 Expanded(
                   child: _buildStatCard(
                     context,
-                    'Active Students',
-                    '0',
-                    Icons.people,
-                    Colors.blue,
+                    'Profile Complete',
+                    '${(_calculateProfileCompletion(user!) * 100).toInt()}%',
+                    Icons.person,
+                    _calculateProfileCompletion(user) >= 0.8
+                        ? Colors.green
+                        : Colors.orange,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildStatCard(
                     context,
-                    'This Month',
-                    '\$0',
-                    Icons.attach_money,
-                    Colors.green,
+                    'Subjects',
+                    '${user.subjects?.length ?? 0}',
+                    Icons.subject,
+                    Colors.blue,
                   ),
                 ),
               ],
@@ -165,10 +191,7 @@ class TutorDashboard extends ConsumerWidget {
                   Icons.edit,
                   Colors.orange,
                   () {
-                    // TODO: Navigate to profile setup
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coming soon!')),
-                    );
+                    context.go('/edit-profile');
                   },
                 ),
                 _buildActionCard(
@@ -204,10 +227,7 @@ class TutorDashboard extends ConsumerWidget {
                   Icons.message,
                   Colors.blue,
                   () {
-                    // TODO: Navigate to messages
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coming soon!')),
-                    );
+                    context.go('/chatList');
                   },
                 ),
               ],
@@ -254,9 +274,13 @@ class TutorDashboard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '20%',
+                        '${(_calculateProfileCompletion(user) * 100).toInt()}%',
                         style: TextStyle(
-                          color: Colors.orange,
+                          color: _calculateProfileCompletion(user) >= 0.8
+                              ? Colors.green
+                              : _calculateProfileCompletion(user) >= 0.5
+                              ? Colors.orange
+                              : Colors.red,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -264,9 +288,15 @@ class TutorDashboard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
-                    value: 0.2,
+                    value: _calculateProfileCompletion(user),
                     backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _calculateProfileCompletion(user) >= 0.8
+                          ? Colors.green
+                          : _calculateProfileCompletion(user) >= 0.5
+                          ? Colors.orange
+                          : Colors.red,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -274,11 +304,27 @@ class TutorDashboard extends ConsumerWidget {
                     style: TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 8),
-                  _buildProfileItem('Add subjects you teach', false),
-                  _buildProfileItem('Set your hourly rate', false),
-                  _buildProfileItem('Add your location', false),
-                  _buildProfileItem('Write a bio', false),
-                  _buildProfileItem('Set availability', false),
+                  _buildProfileItem(
+                    'Write a bio',
+                    user.bio != null && user.bio!.isNotEmpty,
+                  ),
+                  _buildProfileItem(
+                    'Add subjects you teach',
+                    user.subjects != null && user.subjects!.isNotEmpty,
+                  ),
+                  _buildProfileItem(
+                    'Set your hourly rate',
+                    user.hourlyRate != null && user.hourlyRate! > 0,
+                  ),
+                  _buildProfileItem(
+                    'Add your location',
+                    user.city != null && user.city!.isNotEmpty,
+                  ),
+                  _buildProfileItem(
+                    'Set teaching modes',
+                    user.teachingModes != null &&
+                        user.teachingModes!.isNotEmpty,
+                  ),
                 ],
               ),
             ),

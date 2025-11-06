@@ -1,37 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../features/auth/application/auth_state.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/signup_screen.dart';
 import '../features/student/presentation/student_dashboard_screen.dart';
 import '../features/tutor/presentation/tutor_dashboard.dart';
-import '../features/student/screens/chat_list_screen.dart';
-import '../features/student/screens/chat_screen.dart';
+import '../features/chat/screens/chat_list_screen.dart';
+import '../features/chat/screens/chat_screen.dart';
+import '../features/profile/screens/edit_profile_screen.dart';
 import '../shared/models/user_model.dart';
-
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
 
+    /// 🔁 Redirect logic with null-safety fixes
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
-
-      final isLoggedIn = authState.hasValue && authState.value != null;
+      final user = authState.valueOrNull; // ✅ safe read
+      final isLoggedIn = user != null;
       final isOnAuthScreen =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup';
 
       // If not logged in and not on auth screens → go to login
       if (!isLoggedIn && !isOnAuthScreen) {
+        debugPrint('🔐 Redirect → Not logged in, sending to /login');
         return '/login';
       }
 
       // If logged in and on auth screens → go to dashboard
       if (isLoggedIn && isOnAuthScreen) {
-        final user = authState.value!;
+        debugPrint('✅ Redirect → Logged in user detected, going to dashboard');
         return user.role == UserRole.student
             ? '/student-dashboard'
             : '/tutor-dashboard';
@@ -71,7 +74,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/chatList',
         name: 'chatList',
-        builder: (context, state) => ChatListScreen(),
+        builder: (context, state) {
+          final currentUser = FirebaseAuth.instance.currentUser;
+          if (currentUser == null) {
+            debugPrint('❌ Tried to open ChatList without login');
+            return const Scaffold(
+              body: Center(child: Text('Please log in first.')),
+            );
+          }
+          debugPrint('💬 Opening ChatList for user: ${currentUser.uid}');
+          return ChatListScreen();
+        },
       ),
 
       // 💭 Individual chat screen
@@ -81,21 +94,36 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
 
-          return ChatScreen(
-            chatId: extra?['chatId'] ?? '',
-            tutor: extra?['tutor'] ??
-            UserModel(
-              id: 'unknown',
-              email: 'unknown@example.com',
-              name: 'Unknown',
-              role: UserRole.teacher,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
+          final chatId = extra?['chatId'] ?? '';
+          final tutor =
+              extra?['tutor'] ??
+              UserModel(
+                id: 'unknown',
+                email: 'unknown@example.com',
+                name: 'Unknown',
+                role: UserRole.teacher,
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              );
+          final currentUserId = extra?['currentUserId'] ?? '';
 
-            currentUserId: extra?['currentUserId'] ?? '',
+          debugPrint(
+            '➡️ Navigating to ChatScreen | chatId: $chatId | tutor: ${tutor.name} | currentUserId: $currentUserId',
+          );
+
+          return ChatScreen(
+            chatId: chatId,
+            tutor: tutor,
+            currentUserId: currentUserId,
           );
         },
+      ),
+
+      // 👤 Edit Profile
+      GoRoute(
+        path: '/edit-profile',
+        name: 'edit-profile',
+        builder: (context, state) => const EditProfileScreen(),
       ),
 
       // 🏠 Root redirect
@@ -104,8 +132,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'home',
         redirect: (context, state) {
           final authState = ref.read(authNotifierProvider);
-          if (authState.hasValue && authState.value != null) {
-            final user = authState.value!;
+          final user = authState.valueOrNull;
+
+          if (user != null) {
             return user.role == UserRole.student
                 ? '/student-dashboard'
                 : '/tutor-dashboard';
@@ -124,6 +153,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 class _GoRouterRefreshStream extends ChangeNotifier {
   _GoRouterRefreshStream(Ref ref) {
     ref.listen(authNotifierProvider, (previous, next) {
+      debugPrint('🔁 Auth state changed → refreshing router');
       notifyListeners();
     });
   }

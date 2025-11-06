@@ -5,7 +5,9 @@ class ChatService {
 
   /// Create or get an existing chat between student & tutor
   Future<String> getOrCreateChat(String studentId, String tutorId) async {
-    print('🔍 [ChatService] Checking for existing chat between $studentId and $tutorId');
+    print(
+      '🔍 [ChatService] Checking for existing chat between $studentId and $tutorId',
+    );
 
     try {
       final chatQuery = await _firestore
@@ -13,7 +15,9 @@ class ChatService {
           .where('participants', arrayContains: studentId)
           .get();
 
-      print('📦 [ChatService] Found ${chatQuery.docs.length} chats for $studentId');
+      print(
+        '📦 [ChatService] Found ${chatQuery.docs.length} chats for $studentId',
+      );
 
       for (var doc in chatQuery.docs) {
         final data = doc.data();
@@ -43,8 +47,14 @@ class ChatService {
   }
 
   /// Send a message and update chat metadata
-  Future<void> sendMessage(String chatId, String senderId, String message) async {
-    print('💬 [ChatService] Sending message to chatId=$chatId by senderId=$senderId');
+  Future<void> sendMessage(
+    String chatId,
+    String senderId,
+    String message,
+  ) async {
+    print(
+      '💬 [ChatService] Sending message to chatId=$chatId by senderId=$senderId',
+    );
     print('Message content: "$message"');
 
     try {
@@ -55,10 +65,11 @@ class ChatService {
           .doc(chatId)
           .collection('messages')
           .add({
-        'senderId': senderId,
-        'message': message,
-        'timestamp': timestamp,
-      });
+            'senderId': senderId,
+            'message': message,
+            'timestamp': timestamp,
+            'read': false,
+          });
 
       print('✅ [ChatService] Message sent: ${messageRef.id}');
 
@@ -95,5 +106,57 @@ class ChatService {
         .where('participants', arrayContains: userId)
         .orderBy('lastMessageTime', descending: true)
         .snapshots();
+  }
+
+  /// Get unread message count for a specific chat
+  Future<int> getUnreadCount(String chatId, String userId) async {
+    try {
+      // Simplified query to avoid composite index requirement
+      final messagesQuery = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('read', isEqualTo: false)
+          .get();
+
+      // Filter by senderId in code instead of query
+      final unreadMessages = messagesQuery.docs.where((doc) {
+        final data = doc.data();
+        return data['senderId'] != userId;
+      }).length;
+
+      return unreadMessages;
+    } catch (e) {
+      print('❌ [ChatService] Error getting unread count: $e');
+      return 0;
+    }
+  }
+
+  /// Mark messages as read
+  Future<void> markMessagesAsRead(String chatId, String userId) async {
+    try {
+      final batch = _firestore.batch();
+
+      // Simplified query to avoid composite index requirement
+      final messagesQuery = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('read', isEqualTo: false)
+          .get();
+
+      // Filter by senderId in code and update
+      for (var doc in messagesQuery.docs) {
+        final data = doc.data();
+        if (data['senderId'] != userId) {
+          batch.update(doc.reference, {'read': true});
+        }
+      }
+
+      await batch.commit();
+      print('✅ [ChatService] Marked messages as read for chatId=$chatId');
+    } catch (e) {
+      print('❌ [ChatService] Error marking messages as read: $e');
+    }
   }
 }

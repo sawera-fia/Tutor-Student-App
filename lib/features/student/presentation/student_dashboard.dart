@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../auth/application/auth_state.dart';
 import '../../../shared/models/user_model.dart';
 
@@ -31,6 +32,14 @@ class StudentDashboard extends ConsumerWidget {
             onSelected: (value) {
               if (value == 'logout') {
                 ref.read(authNotifierProvider.notifier).signOut();
+              } else if (value == 'profile') {
+                context.go('/edit-profile');
+              } else if (value == 'settings') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Settings feature coming soon!'),
+                  ),
+                );
               }
             },
             itemBuilder: (context) => [
@@ -164,10 +173,7 @@ class StudentDashboard extends ConsumerWidget {
                   Icons.message,
                   Colors.orange,
                   () {
-                    // TODO: Navigate to messages
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coming soon!')),
-                    );
+                    context.go('/chatList');
                   },
                 ),
                 _buildActionCard(

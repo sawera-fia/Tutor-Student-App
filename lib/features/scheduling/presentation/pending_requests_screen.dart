@@ -24,7 +24,28 @@ class PendingRequestsScreen extends ConsumerWidget {
           }
           return bookingsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+            error: (e, stackTrace) {
+              // ignore: avoid_print
+              print('[PendingRequestsScreen] ERROR loading bookings: $e');
+              // ignore: avoid_print
+              print('[PendingRequestsScreen] Stack trace: $stackTrace');
+              if (e.toString().contains('failed-precondition') || e.toString().contains('index')) {
+                // ignore: avoid_print
+                print('[PendingRequestsScreen] ⚠️ INDEX REQUIRED! Check console for index creation link.');
+              }
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text('Error: $e', style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 8),
+                    const Text('Check console for details', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+                ),
+              );
+            },
             data: (bookings) {
               final needsYourAction = bookings.where((b) =>
                   b.status == BookingStatus.pending &&

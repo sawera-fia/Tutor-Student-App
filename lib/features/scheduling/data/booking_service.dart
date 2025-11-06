@@ -15,13 +15,42 @@ class BookingService {
   }
 
   Stream<List<BookingModel>> watchForUser(String userId) {
+    // ignore: avoid_print
+    print('[BookingService.watchForUser] userId=$userId');
     return _col
         .where('participants', arrayContains: userId)
         .orderBy('startAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs
-            .map((d) => BookingModel.fromFirestore(d.id, d.data()))
-            .toList());
+        .handleError((error) {
+      // ignore: avoid_print
+      print('[BookingService.watchForUser] ERROR: $error');
+      if (error is FirebaseException) {
+        // ignore: avoid_print
+        print('[BookingService.watchForUser] FirebaseException code=${error.code} message=${error.message}');
+        if (error.code == 'failed-precondition') {
+          // ignore: avoid_print
+          print('[BookingService.watchForUser] ⚠️ INDEX REQUIRED! Check Firebase Console for index creation link.');
+          // ignore: avoid_print
+          print('[BookingService.watchForUser] Error details: ${error.toString()}');
+          // Try to extract the index link from the error message if available
+          if (error.message != null && error.message!.contains('https://')) {
+            final uriMatch = RegExp(r'https://[^\s]+').firstMatch(error.message!);
+            if (uriMatch != null) {
+              // ignore: avoid_print
+              print('[BookingService.watchForUser] 🔗 Index creation link: ${uriMatch.group(0)}');
+            }
+          }
+        }
+      }
+      rethrow;
+    })
+        .map((snap) {
+      // ignore: avoid_print
+      print('[BookingService.watchForUser] snapshot received: ${snap.docs.length} docs');
+      return snap.docs
+          .map((d) => BookingModel.fromFirestore(d.id, d.data()))
+          .toList();
+    });
   }
 
   Future<bool> _hasConflict({

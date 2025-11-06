@@ -40,9 +40,12 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
   }
 
   List<DropdownMenuItem<avail_models.TeachingMode>> _modeItems() {
-    final canOnline = widget.tutor.teachingMode == user_models.TeachingMode.online ||
+    final teachesNull = widget.tutor.teachingMode == null;
+    final canOnline = teachesNull ||
+        widget.tutor.teachingMode == user_models.TeachingMode.online ||
         widget.tutor.teachingMode == user_models.TeachingMode.both;
-    final canPhysical = widget.tutor.teachingMode == user_models.TeachingMode.physical ||
+    final canPhysical = teachesNull ||
+        widget.tutor.teachingMode == user_models.TeachingMode.physical ||
         widget.tutor.teachingMode == user_models.TeachingMode.both;
     final items = <DropdownMenuItem<avail_models.TeachingMode>>[];
     if (canOnline) {
@@ -91,7 +94,7 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_date == null || _time == null || _mode == null || _subject == null) {
+    if (_date == null || _time == null || _subject == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all fields')),
       );
@@ -115,6 +118,27 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
     final endUtc = startUtc.add(Duration(minutes: _durationMinutes));
     final priceCents = int.tryParse(_priceController.text.trim()) ?? 0;
 
+    // Determine mode if not selected
+    avail_models.TeachingMode finalMode;
+    if (_mode != null) {
+      finalMode = _mode!;
+    } else {
+      final teachesNull = widget.tutor.teachingMode == null;
+      final supportsOnline = teachesNull ||
+          widget.tutor.teachingMode == user_models.TeachingMode.online ||
+          widget.tutor.teachingMode == user_models.TeachingMode.both;
+      final supportsPhysical = teachesNull ||
+          widget.tutor.teachingMode == user_models.TeachingMode.physical ||
+          widget.tutor.teachingMode == user_models.TeachingMode.both;
+      if (supportsOnline && !supportsPhysical) {
+        finalMode = avail_models.TeachingMode.online;
+      } else if (!supportsOnline && supportsPhysical) {
+        finalMode = avail_models.TeachingMode.physical;
+      } else {
+        finalMode = avail_models.TeachingMode.online; // sensible default
+      }
+    }
+
     try {
       final bookingService = ref.read(bookingServiceProvider);
       await bookingService.createRequest(
@@ -122,7 +146,7 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
         studentId: user.uid, // initiated from student view
         tutorId: widget.tutor.id,
         subject: _subject!,
-        mode: _mode!,
+        mode: finalMode,
         startAtUtc: startUtc,
         endAtUtc: endUtc,
         priceCents: priceCents * 100, // store cents
@@ -182,7 +206,7 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
                   items: _modeItems(),
                   decoration: const InputDecoration(labelText: 'Mode'),
                   onChanged: (v) => setState(() => _mode = v),
-                  validator: (v) => v == null ? 'Select mode' : null,
+                  // Optional: no validator, defaults intelligently
                 ),
                 const SizedBox(height: 8),
                 Row(

@@ -202,7 +202,7 @@ class TutorDashboard extends ConsumerWidget {
                   Icons.schedule,
                   Colors.purple,
                   () {
-                    context.go('/pending-requests');
+                    context.go('/tutor-schedule');
                   },
                 ),
                 _buildActionCard(

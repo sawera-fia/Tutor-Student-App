@@ -53,6 +53,31 @@ class BookingService {
     });
   }
 
+  Stream<List<BookingModel>> watchAcceptedForTutor(String tutorId) {
+    // ignore: avoid_print
+    print('[BookingService.watchAcceptedForTutor] tutorId=$tutorId');
+    return _col
+        .where('tutorId', isEqualTo: tutorId)
+        .where('status', isEqualTo: BookingStatus.accepted.name)
+        .orderBy('startAt')
+        .snapshots()
+        .handleError((error) {
+      // ignore: avoid_print
+      print('[BookingService.watchAcceptedForTutor] ERROR: $error');
+      if (error is FirebaseException) {
+        // ignore: avoid_print
+        print('[BookingService.watchAcceptedForTutor] FirebaseException code=${error.code} message=${error.message}');
+      }
+      throw error;
+    }).map((snap) {
+      // ignore: avoid_print
+      print('[BookingService.watchAcceptedForTutor] snapshot: ${snap.docs.length}');
+      return snap.docs
+          .map((d) => BookingModel.fromFirestore(d.id, d.data()))
+          .toList();
+    });
+  }
+
   Future<bool> _hasConflict({
     required String tutorId,
     required DateTime startUtc,

@@ -13,6 +13,7 @@ import '../features/chat/screens/chat_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../shared/models/user_model.dart';
 import '../features/scheduling/presentation/pending_requests_screen.dart';
+import '../features/scheduling/presentation/tutor_schedule_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -132,6 +133,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/pending-requests',
         name: 'pending-requests',
         builder: (context, state) => const PendingRequestsScreen(),
+      ),
+
+      // 🗓️ Tutor Schedule (accepted sessions)
+      GoRoute(
+        path: '/tutor-schedule',
+        name: 'tutor-schedule',
+        builder: (context, state) => const TutorScheduleScreen(),
       ),
 
       // 🏠 Root redirect

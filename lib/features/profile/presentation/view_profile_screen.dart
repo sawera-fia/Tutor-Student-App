@@ -330,11 +330,11 @@ class _ViewProfileScreenState extends ConsumerState<ViewProfileScreen> {
                                             .doc(rating.studentId)
                                             .get(),
                                         builder: (context, studentSnap) {
-                                          final studentName = studentSnap.hasData &&
-                                                  studentSnap.data!.exists
-                                              ? (studentSnap.data!.data() as Map<String, dynamic>?)?['name'] ??
-                                                  'Anonymous'
-                                              : 'Anonymous';
+                                          String studentName = 'Anonymous';
+                                          if (studentSnap.hasData && studentSnap.data!.exists) {
+                                            final data = studentSnap.data!.data() as Map<String, dynamic>?;
+                                            studentName = data?['name'] as String? ?? 'Anonymous';
+                                          }
                                           return ListTile(
                                             contentPadding: EdgeInsets.zero,
                                             leading: CircleAvatar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/booking_model.dart';
 import '../../../shared/models/user_model.dart';
 import '../../auth/application/auth_state.dart';
@@ -57,8 +58,28 @@ class PendingRequestsScreen extends ConsumerWidget {
                 length: 2,
                 child: Column(
                   children: [
-                    const TabBar(tabs: [
-                      Tab(text: 'Needs Your Action'),
+                    TabBar(tabs: [
+                      Tab(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Needs Your Action'),
+                            if (needsYourAction.isNotEmpty)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${needsYourAction.length}',
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                       Tab(text: 'Your Requests'),
                     ]),
                     Expanded(
@@ -111,64 +132,126 @@ class _RequestsList extends ConsumerWidget {
       itemBuilder: (context, index) {
         final b = bookings[index];
         final isTutorSide = b.tutorId == currentUser.id;
+        final isProposal = b.initiatorId != currentUser.id; // Someone else initiated
         final counterpartId = isTutorSide ? b.studentId : b.tutorId;
-        return ListTile(
-          title: Text('${b.subject} • ${b.mode.name}'),
-          subtitle: Text(
-            '${b.startAtUtc.toLocal()} - ${b.endAtUtc.toLocal()}\nFrom: ${b.initiatorId == currentUser.id ? 'You' : 'Them'}',
-          ),
-          isThreeLine: true,
-          trailing: canAct
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextButton(
-                      onPressed: () async {
-                        try {
-                          await bookingService.accept(b.id, currentUser.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Request accepted')),
-                            );
-                          }
-                        } catch (e) {
-                          // ignore: avoid_print
-                          print('[PendingRequestsScreen] accept error: $e');
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Unable to accept: $e')),
-                            );
-                          }
-                        }
-                      },
-                      child: const Text('Accept'),
+        
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance.collection('users').doc(counterpartId).get(),
+          builder: (context, snapshot) {
+            final counterpartName = snapshot.hasData && snapshot.data!.exists
+                ? (snapshot.data!.data() as Map<String, dynamic>?)?['name'] ?? 'Unknown'
+                : 'Loading...';
+            
+            return ListTile(
+              leading: CircleAvatar(
+                backgroundColor: isProposal ? Colors.green.shade100 : Colors.blue.shade100,
+                child: Icon(
+                  isProposal ? Icons.event_available : Icons.send,
+                  color: isProposal ? Colors.green : Colors.blue,
+                ),
+              ),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text('${b.subject} • ${b.mode.name}'),
+                  ),
+                  if (isProposal)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Proposal',
+                        style: TextStyle(
+                          color: Colors.green.shade700,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    TextButton(
-                      onPressed: () async {
-                        try {
-                          await bookingService.decline(b.id, currentUser.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Request declined')),
-                            );
-                          }
-                        } catch (e) {
-                          // ignore: avoid_print
-                          print('[PendingRequestsScreen] decline error: $e');
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Unable to decline: $e')),
-                            );
-                          }
-                        }
-                      },
-                      child: const Text('Decline'),
-                    ),
-                  ],
-                )
-              : Text('Waiting for ${b.requiresAcceptanceBy == currentUser.id ? 'you' : 'them'}'),
-          onTap: () {
-            // TODO: open details / chat
+                ],
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  Text(
+                    isProposal
+                        ? 'Proposal from: $counterpartName'
+                        : 'Your request to: $counterpartName',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${b.startAtUtc.toLocal().toString().substring(0, 16)} - ${b.endAtUtc.toLocal().toString().substring(11, 16)}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+              isThreeLine: true,
+              trailing: canAct
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton(
+                          onPressed: () async {
+                            try {
+                              await bookingService.accept(b.id, currentUser.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isProposal
+                                        ? 'Proposal accepted!'
+                                        : 'Request accepted'),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              // ignore: avoid_print
+                              print('[PendingRequestsScreen] accept error: $e');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Unable to accept: $e')),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('Accept'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            try {
+                              await bookingService.decline(b.id, currentUser.id);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(isProposal
+                                        ? 'Proposal declined'
+                                        : 'Request declined'),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              // ignore: avoid_print
+                              print('[PendingRequestsScreen] decline error: $e');
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Unable to decline: $e')),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('Decline'),
+                        ),
+                      ],
+                    )
+                  : Text('Waiting for ${b.requiresAcceptanceBy == currentUser.id ? 'you' : 'them'}'),
+              onTap: () {
+                // TODO: open details / chat
+              },
+            );
           },
         );
       },

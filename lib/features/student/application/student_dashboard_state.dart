@@ -31,7 +31,7 @@ class StudentDashboardNotifier
     double? maxHourlyRate,
     String? teachingMode,
     String? location,
-    double? maxDistance,
+    double? minRating,
   }) async {
     try {
       state = const AsyncValue.loading();
@@ -40,7 +40,7 @@ class StudentDashboardNotifier
         maxHourlyRate: maxHourlyRate,
         teachingMode: teachingMode,
         location: location,
-        maxDistance: maxDistance,
+        minRating: minRating,
       );
       state = AsyncValue.data(tutors);
     } catch (e, stackTrace) {

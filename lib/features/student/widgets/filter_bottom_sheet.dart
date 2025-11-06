@@ -5,7 +5,7 @@ class FilterBottomSheet extends StatefulWidget {
   final double? maxHourlyRate;
   final String? selectedTeachingMode;
   final String? selectedLocation;
-  final double? maxDistance;
+  final double? minRating;
   final Function(Map<String, dynamic>) onApplyFilters;
 
   const FilterBottomSheet({
@@ -14,7 +14,7 @@ class FilterBottomSheet extends StatefulWidget {
     this.maxHourlyRate,
     this.selectedTeachingMode,
     this.selectedLocation,
-    this.maxDistance,
+    this.minRating,
     required this.onApplyFilters,
   });
 
@@ -27,7 +27,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   double? _maxHourlyRate;
   String? _selectedTeachingMode;
   String? _selectedLocation;
-  double? _maxDistance;
+  double? _minRating;
 
   final List<String> _subjects = [
     'Mathematics', 'Science', 'English', 'History', 'Geography',
@@ -43,7 +43,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     _maxHourlyRate = widget.maxHourlyRate;
     _selectedTeachingMode = widget.selectedTeachingMode;
     _selectedLocation = widget.selectedLocation;
-    _maxDistance = widget.maxDistance;
+    _minRating = widget.minRating;
   }
 
   void _applyFilters() {
@@ -52,7 +52,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       'maxHourlyRate': _maxHourlyRate,
       'teachingMode': _selectedTeachingMode,
       'location': _selectedLocation,
-      'maxDistance': _maxDistance,
+      'minRating': _minRating,
     });
     Navigator.pop(context);
   }
@@ -63,7 +63,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       _maxHourlyRate = null;
       _selectedTeachingMode = null;
       _selectedLocation = null;
-      _maxDistance = null;
+      _minRating = null;
     });
   }
 
@@ -139,9 +139,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   
                   const SizedBox(height: 24),
                   
-                  // Distance filter
-                  _buildSectionTitle('Maximum Distance (km)'),
-                  _buildDistanceFilter(),
+                  // Minimum rating filter
+                  _buildSectionTitle('Minimum Rating'),
+                  _buildRatingFilter(),
                   
                   const SizedBox(height: 32),
                 ],
@@ -284,34 +284,49 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     );
   }
 
-  Widget _buildDistanceFilter() {
+  Widget _buildRatingFilter() {
     return Column(
       children: [
-        if (_maxDistance != null)
-          Text(
-            '${_maxDistance!.toStringAsFixed(0)} km',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.w600,
-            ),
+        if (_minRating != null)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ...List.generate(5, (index) {
+                return Icon(
+                  index < _minRating!.round()
+                      ? Icons.star
+                      : Icons.star_border,
+                  color: Colors.amber,
+                  size: 24,
+                );
+              }),
+              const SizedBox(width: 8),
+              Text(
+                '${_minRating!.toStringAsFixed(1)}+',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         Slider(
-          value: _maxDistance ?? 50,
-          min: 5,
-          max: 100,
-          divisions: 19,
-          label: '${(_maxDistance ?? 50).toStringAsFixed(0)} km',
+          value: _minRating ?? 0,
+          min: 0,
+          max: 5,
+          divisions: 10,
+          label: _minRating != null ? '${_minRating!.toStringAsFixed(1)}+' : 'Any',
           onChanged: (value) {
             setState(() {
-              _maxDistance = value;
+              _minRating = value > 0 ? value : null;
             });
           },
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('5 km', style: TextStyle(color: Colors.grey[600])),
-            Text('100 km', style: TextStyle(color: Colors.grey[600])),
+            Text('Any', style: TextStyle(color: Colors.grey[600])),
+            Text('5.0', style: TextStyle(color: Colors.grey[600])),
           ],
         ),
       ],

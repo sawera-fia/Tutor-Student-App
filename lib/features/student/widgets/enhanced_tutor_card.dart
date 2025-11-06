@@ -201,18 +201,38 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                     ),
                   const Spacer(),
                   if (widget.tutor.rating != null && widget.tutor.rating! > 0)
-                    Row(
-                      children: [
-                        Icon(Icons.star, size: 16, color: Colors.amber[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.tutor.rating!.toStringAsFixed(1),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w600,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star, size: 18, color: Colors.amber[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.tutor.rating!.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: Colors.amber[900],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
+                          if (widget.tutor.totalReviews != null && widget.tutor.totalReviews! > 0) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              '(${widget.tutor.totalReviews})',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                 ],
               ),

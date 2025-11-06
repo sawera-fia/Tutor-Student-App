@@ -15,6 +15,7 @@ import '../shared/models/user_model.dart';
 import '../features/scheduling/presentation/pending_requests_screen.dart';
 import '../features/scheduling/presentation/tutor_schedule_screen.dart';
 import '../features/scheduling/presentation/student_schedule_screen.dart';
+import '../features/profile/presentation/view_profile_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -148,6 +149,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/student-schedule',
         name: 'student-schedule',
         builder: (context, state) => const StudentScheduleScreen(),
+      ),
+
+      // 👤 View Profile
+      GoRoute(
+        path: '/view-profile/:userId',
+        name: 'view-profile',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? '';
+          return ViewProfileScreen(userId: userId);
+        },
       ),
 
       // 🏠 Root redirect

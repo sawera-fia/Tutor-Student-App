@@ -24,7 +24,7 @@ class _StudentDashboardScreenState
   double? _maxHourlyRate;
   String? _selectedTeachingMode;
   String? _selectedLocation;
-  double? _maxDistance;
+  double? _minRating;
 
   @override
   void initState() {
@@ -61,7 +61,7 @@ class _StudentDashboardScreenState
         maxHourlyRate: _maxHourlyRate,
         selectedTeachingMode: _selectedTeachingMode,
         selectedLocation: _selectedLocation,
-        maxDistance: _maxDistance,
+        minRating: _minRating,
         onApplyFilters: (filters) {
           debugPrint('✅ Filters applied: $filters');
           setState(() {
@@ -69,7 +69,7 @@ class _StudentDashboardScreenState
             _maxHourlyRate = filters['maxHourlyRate'];
             _selectedTeachingMode = filters['teachingMode'];
             _selectedLocation = filters['location'];
-            _maxDistance = filters['maxDistance'];
+            _minRating = filters['minRating'];
           });
           _applyFilters();
         },
@@ -79,7 +79,7 @@ class _StudentDashboardScreenState
 
   void _applyFilters() {
     debugPrint(
-      '🔍 Applying filters: subject=$_selectedSubject, rate=$_maxHourlyRate, mode=$_selectedTeachingMode, location=$_selectedLocation, distance=$_maxDistance',
+      '🔍 Applying filters: subject=$_selectedSubject, rate=$_maxHourlyRate, mode=$_selectedTeachingMode, location=$_selectedLocation, minRating=$_minRating',
     );
     ref
         .read(studentDashboardNotifierProvider.notifier)
@@ -88,7 +88,7 @@ class _StudentDashboardScreenState
           maxHourlyRate: _maxHourlyRate,
           teachingMode: _selectedTeachingMode,
           location: _selectedLocation,
-          maxDistance: _maxDistance,
+          minRating: _minRating,
         );
   }
 
@@ -352,7 +352,9 @@ class _StudentDashboardScreenState
                     padding: const EdgeInsets.only(bottom: 16),
                     child: EnhancedTutorCard(
                       tutor: tutor,
-                      onTap: () => _showTutorDetails(tutor),
+                      onTap: () {
+                        context.go('/view-profile/${tutor.id}');
+                      },
                     ),
                   );
                 },

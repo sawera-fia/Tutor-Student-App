@@ -27,7 +27,7 @@ class StudentDashboardService {
     double? maxHourlyRate,
     String? teachingMode,
     String? location,
-    double? maxDistance,
+    double? minRating,
   }) async {
     try {
       Query query = _firestore
@@ -69,7 +69,12 @@ class StudentDashboardService {
         }).toList();
       }
 
-      // TODO: Apply distance filtering once coordinates are available
+      // Apply minimum rating filter
+      if (minRating != null && minRating > 0) {
+        tutors = tutors.where((tutor) {
+          return tutor.rating != null && tutor.rating! >= minRating;
+        }).toList();
+      }
 
       return tutors;
     } catch (e) {

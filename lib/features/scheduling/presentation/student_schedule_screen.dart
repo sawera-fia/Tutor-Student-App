@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../auth/application/auth_state.dart';
 import '../application/scheduling_providers.dart';
 import '../../../shared/models/booking_model.dart';
 import '../../../shared/models/user_model.dart';
+import '../../ratings/data/rating_service.dart';
+import '../../ratings/presentation/rate_tutor_sheet.dart';
 
 class StudentScheduleScreen extends ConsumerWidget {
   const StudentScheduleScreen({super.key});
@@ -217,9 +221,62 @@ class _ScheduleList extends StatelessWidget {
                 ),
               ),
               isThreeLine: true,
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Rate button for past sessions
+                  if (b.endAtUtc.isBefore(DateTime.now().toUtc()) &&
+                      b.status == BookingStatus.completed)
+                    FutureBuilder<bool>(
+                      future: RatingService().hasRated(b.id, studentId),
+                      builder: (context, hasRatedSnap) {
+                        if (!hasRatedSnap.hasData) {
+                          return const SizedBox.shrink();
+                        }
+                        final hasRated = hasRatedSnap.data ?? false;
+                        return IconButton(
+                          icon: Icon(
+                            hasRated ? Icons.star : Icons.star_border,
+                            color: hasRated ? Colors.amber : Colors.grey,
+                          ),
+                          onPressed: () async {
+                            // Get tutor data
+                            final tutorDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(b.tutorId)
+                                .get();
+                            if (tutorDoc.exists) {
+                              final tutorData = tutorDoc.data()!;
+                              final tutor = UserModel.fromJson({
+                                ...tutorData,
+                                'id': tutorDoc.id,
+                                'createdAt': tutorData['createdAt'],
+                                'updatedAt': tutorData['updatedAt'],
+                              });
+                              if (context.mounted) {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                  ),
+                                  builder: (ctx) => RateTutorSheet(
+                                    tutor: tutor,
+                                    bookingId: b.id,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                          tooltip: hasRated ? 'Update Rating' : 'Rate Tutor',
+                        );
+                      },
+                    ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
               onTap: () {
-                // TODO: open booking details or join link when available
+                context.go('/view-profile/${b.tutorId}');
               },
             );
           },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import '../services/chat_service.dart';
 import '../../../shared/models/user_model.dart';
 import '../../auth/application/auth_state.dart';
@@ -71,12 +72,15 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            const CircleAvatar(child: Icon(Icons.person)),
-            const SizedBox(width: 10),
-            Text(widget.tutor.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ],
+        title: GestureDetector(
+          onTap: () => context.go('/view-profile/${widget.tutor.id}'),
+          child: Row(
+            children: [
+              const CircleAvatar(child: Icon(Icons.person)),
+              const SizedBox(width: 10),
+              Text(widget.tutor.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
         actions: [
           // Propose Session (tutor only)

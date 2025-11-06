@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../shared/models/booking_model.dart';
+import '../../../shared/models/availability_model.dart' show TeachingMode;
 
 class BookingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;

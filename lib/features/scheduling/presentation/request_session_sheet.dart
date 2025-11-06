@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/models/user_model.dart' as user_models;
-import '../../../shared/models/booking_model.dart' as booking_models;
+import '../../../shared/models/availability_model.dart' as avail_models;
 import '../application/scheduling_providers.dart';
 
 class RequestSessionSheet extends ConsumerStatefulWidget {
@@ -15,7 +15,7 @@ class RequestSessionSheet extends ConsumerStatefulWidget {
 
 class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
   String? _subject;
-  booking_models.TeachingMode? _mode;
+  avail_models.TeachingMode? _mode;
   DateTime? _date;
   TimeOfDay? _time;
   int _durationMinutes = 60;
@@ -39,25 +39,25 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
     super.dispose();
   }
 
-  List<DropdownMenuItem<booking_models.TeachingMode>> _modeItems() {
+  List<DropdownMenuItem<avail_models.TeachingMode>> _modeItems() {
     final canOnline = widget.tutor.teachingMode == user_models.TeachingMode.online ||
         widget.tutor.teachingMode == user_models.TeachingMode.both;
     final canPhysical = widget.tutor.teachingMode == user_models.TeachingMode.physical ||
         widget.tutor.teachingMode == user_models.TeachingMode.both;
-    final items = <DropdownMenuItem<booking_models.TeachingMode>>[];
+    final items = <DropdownMenuItem<avail_models.TeachingMode>>[];
     if (canOnline) {
       items.add(const DropdownMenuItem(
-        value: booking_models.TeachingMode.online,
+        value: avail_models.TeachingMode.online,
         child: Text('Online'),
       ));
-      _mode ??= booking_models.TeachingMode.online;
+      _mode ??= avail_models.TeachingMode.online;
     }
     if (canPhysical) {
       items.add(const DropdownMenuItem(
-        value: booking_models.TeachingMode.physical,
+        value: avail_models.TeachingMode.physical,
         child: Text('Physical'),
       ));
-      _mode ??= _mode ?? booking_models.TeachingMode.physical;
+      _mode ??= _mode ?? avail_models.TeachingMode.physical;
     }
     return items;
   }
@@ -177,7 +177,7 @@ class _RequestSessionSheetState extends ConsumerState<RequestSessionSheet> {
                   validator: (v) => v == null || v.isEmpty ? 'Select subject' : null,
                 ),
                 const SizedBox(height: 8),
-                DropdownButtonFormField<booking_models.TeachingMode>(
+                DropdownButtonFormField<avail_models.TeachingMode>(
                   value: _mode,
                   items: _modeItems(),
                   decoration: const InputDecoration(labelText: 'Mode'),

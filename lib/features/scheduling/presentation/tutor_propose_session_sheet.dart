@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../shared/models/user_model.dart' as user_models;
-import '../../../shared/models/booking_model.dart' as booking_models;
+import '../../../shared/models/availability_model.dart' as avail_models;
 import '../../auth/application/auth_state.dart';
 import '../application/scheduling_providers.dart';
 
@@ -16,7 +16,7 @@ class TutorProposeSessionSheet extends ConsumerStatefulWidget {
 
 class _TutorProposeSessionSheetState extends ConsumerState<TutorProposeSessionSheet> {
   String? _subject;
-  booking_models.TeachingMode _mode = booking_models.TeachingMode.online;
+  avail_models.TeachingMode _mode = avail_models.TeachingMode.online;
   DateTime? _date;
   TimeOfDay? _time;
   int _durationMinutes = 60;
@@ -141,20 +141,20 @@ class _TutorProposeSessionSheetState extends ConsumerState<TutorProposeSessionSh
                       validator: (v) => v == null || v.isEmpty ? 'Select subject' : null,
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<booking_models.TeachingMode>(
+                    DropdownButtonFormField<avail_models.TeachingMode>(
                       value: _mode,
                       items: const [
                         DropdownMenuItem(
-                          value: booking_models.TeachingMode.online,
+                          value: avail_models.TeachingMode.online,
                           child: Text('Online'),
                         ),
                         DropdownMenuItem(
-                          value: booking_models.TeachingMode.physical,
+                          value: avail_models.TeachingMode.physical,
                           child: Text('Physical'),
                         ),
                       ],
                       decoration: const InputDecoration(labelText: 'Mode'),
-                      onChanged: (v) => setState(() => _mode = v ?? booking_models.TeachingMode.online),
+                      onChanged: (v) => setState(() => _mode = v ?? avail_models.TeachingMode.online),
                     ),
                     const SizedBox(height: 8),
                     Row(

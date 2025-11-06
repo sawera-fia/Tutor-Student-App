@@ -36,6 +36,8 @@ class BookingModel {
     this.meetingProvider,
     this.meetingId,
     this.cancelReason,
+    required this.initiatorId,
+    required this.requiresAcceptanceBy,
     required this.createdAt,
     required this.updatedAt,
   });

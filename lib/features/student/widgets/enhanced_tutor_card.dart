@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../presentation/tutor_map_screen.dart';
 import '../../../shared/models/user_model.dart';
 import '../../chat/services/chat_service.dart';
-import 'request_session_sheet.dart';
+import '../../scheduling/presentation/request_session_sheet.dart';
 
 class EnhancedTutorCard extends StatefulWidget {
   final UserModel tutor;

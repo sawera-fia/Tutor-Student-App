@@ -12,6 +12,7 @@ import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../features/profile/screens/edit_profile_screen.dart';
 import '../shared/models/user_model.dart';
+import '../features/scheduling/presentation/pending_requests_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -124,6 +125,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/edit-profile',
         name: 'edit-profile',
         builder: (context, state) => const EditProfileScreen(),
+      ),
+
+      // 📅 Pending Requests
+      GoRoute(
+        path: '/pending-requests',
+        name: 'pending-requests',
+        builder: (context, state) => const PendingRequestsScreen(),
       ),
 
       // 🏠 Root redirect

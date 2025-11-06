@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../presentation/tutor_map_screen.dart';
 import '../../../shared/models/user_model.dart';
 import '../../chat/services/chat_service.dart';
+import 'request_session_sheet.dart';
 
 class EnhancedTutorCard extends StatefulWidget {
   final UserModel tutor;
@@ -282,6 +283,40 @@ class _EnhancedTutorCardState extends State<EnhancedTutorCard> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Request Session Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () async {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      builder: (ctx) {
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                          ),
+                          child: RequestSessionSheet(tutor: widget.tutor),
+                        );
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.schedule),
+                  label: const Text('Request Session'),
                 ),
               ),
             ],

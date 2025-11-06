@@ -201,10 +201,7 @@ class TutorDashboard extends ConsumerWidget {
                   Icons.schedule,
                   Colors.purple,
                   () {
-                    // TODO: Navigate to schedule
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coming soon!')),
-                    );
+                    context.go('/pending-requests');
                   },
                 ),
                 _buildActionCard(
@@ -214,10 +211,7 @@ class TutorDashboard extends ConsumerWidget {
                   Icons.notifications,
                   Colors.red,
                   () {
-                    // TODO: Navigate to requests
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coming soon!')),
-                    );
+                    context.go('/pending-requests');
                   },
                 ),
                 _buildActionCard(

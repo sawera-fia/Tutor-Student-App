@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/chat_service.dart';
 import '../../../shared/models/user_model.dart';
+import '../../auth/application/auth_state.dart';
+import '../../scheduling/presentation/tutor_propose_session_sheet.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -75,6 +78,32 @@ class _ChatScreenState extends State<ChatScreen> {
             Text(widget.tutor.name, style: const TextStyle(fontWeight: FontWeight.w600)),
           ],
         ),
+        actions: [
+          // Propose Session (tutor only)
+          Consumer(builder: (context, ref, _) {
+            final userAsync = ref.watch(currentUserProvider);
+            final user = userAsync.asData?.value;
+            final isTutor = user?.role == UserRole.teacher;
+            if (user == null || !isTutor) return const SizedBox.shrink();
+            return IconButton(
+              tooltip: 'Propose Session',
+              icon: const Icon(Icons.event_available_outlined),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  builder: (ctx) => Padding(
+                    padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+                    child: TutorProposeSessionSheet(student: widget.tutor),
+                  ),
+                );
+              },
+            );
+          }),
+        ],
       ),
       body: Column(
         children: [

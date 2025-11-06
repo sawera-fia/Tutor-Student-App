@@ -160,10 +160,7 @@ class StudentDashboard extends ConsumerWidget {
                   Icons.calendar_today,
                   Colors.green,
                   () {
-                    // TODO: Navigate to sessions
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Coming soon!')),
-                    );
+                    context.go('/pending-requests');
                   },
                 ),
                 _buildActionCard(

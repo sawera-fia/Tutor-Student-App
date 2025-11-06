@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/application/auth_state.dart';
 import '../../../shared/models/user_model.dart';
+import '../../scheduling/presentation/tutor_propose_session_quick_sheet.dart';
 
 class TutorDashboard extends ConsumerWidget {
   const TutorDashboard({super.key});
@@ -202,6 +203,23 @@ class TutorDashboard extends ConsumerWidget {
                   Colors.purple,
                   () {
                     context.go('/pending-requests');
+                  },
+                ),
+                _buildActionCard(
+                  context,
+                  'Propose Session',
+                  'Send a session proposal',
+                  Icons.event_available,
+                  Colors.green,
+                  () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      ),
+                      builder: (ctx) => const TutorProposeSessionQuickSheet(),
+                    );
                   },
                 ),
                 _buildActionCard(

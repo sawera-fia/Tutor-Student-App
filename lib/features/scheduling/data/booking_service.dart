@@ -42,7 +42,7 @@ class BookingService {
           }
         }
       }
-      rethrow;
+      throw error;
     })
         .map((snap) {
       // ignore: avoid_print

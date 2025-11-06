@@ -15,10 +15,29 @@ class PendingRequestsScreen extends ConsumerWidget {
     final bookingsAsync = ref.watch(userBookingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pending Requests')),
+      appBar: AppBar(
+        title: const Text('Pending Requests'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+      ),
       body: userAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => SingleChildScrollView(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error: $e', style: const TextStyle(fontSize: 16)),
+                ],
+              ),
+            ),
+          ),
+        ),
         data: (user) {
           if (user == null) {
             return const Center(child: Text('Please sign in.'));
@@ -34,16 +53,21 @@ class PendingRequestsScreen extends ConsumerWidget {
                 // ignore: avoid_print
                 print('[PendingRequestsScreen] ⚠️ INDEX REQUIRED! Check console for index creation link.');
               }
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text('Error: $e', style: const TextStyle(fontSize: 16)),
-                    const SizedBox(height: 8),
-                    const Text('Check console for details', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
+              return SingleChildScrollView(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text('Error: $e', style: const TextStyle(fontSize: 16)),
+                        const SizedBox(height: 8),
+                        const Text('Check console for details', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -123,12 +147,38 @@ class _RequestsList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (bookings.isEmpty) {
-      return const Center(child: Text('No pending requests'));
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(48.0),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'No pending requests',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Requests and proposals will appear here',
+                  style: TextStyle(color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     final bookingService = ref.watch(bookingServiceProvider);
     return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: bookings.length,
-      separatorBuilder: (_, __) => const Divider(height: 1),
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 16, endIndent: 16),
       itemBuilder: (context, index) {
         final b = bookings[index];
         final isTutorSide = b.tutorId == currentUser.id;
@@ -145,6 +195,7 @@ class _RequestsList extends ConsumerWidget {
             }
             
             return ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               leading: CircleAvatar(
                 backgroundColor: isProposal ? Colors.green.shade100 : Colors.blue.shade100,
                 child: Icon(

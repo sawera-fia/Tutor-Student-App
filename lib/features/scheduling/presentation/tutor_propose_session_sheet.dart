@@ -111,15 +111,25 @@ class _TutorProposeSessionSheetState extends ConsumerState<TutorProposeSessionSh
         }
 
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.9,
+            ),
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 12,
+              ),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -222,6 +232,7 @@ class _TutorProposeSessionSheetState extends ConsumerState<TutorProposeSessionSh
                         child: const Text('Send Proposal'),
                       ),
                     ),
+                    const SizedBox(height: 16), // Extra padding at bottom
                   ],
                 ),
               ),

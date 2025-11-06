@@ -179,6 +179,22 @@ class _StudentDashboardScreenState
             ),
           ),
           const SizedBox(width: 8),
+          // 📅 My Sessions Icon
+          IconButton(
+            onPressed: () {
+              debugPrint('📅 My Sessions pressed → navigating to /pending-requests');
+              context.go('/pending-requests');
+            },
+            icon: const Icon(Icons.calendar_today),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            tooltip: 'My Sessions & Proposals',
+          ),
+          const SizedBox(width: 8),
           // ⚙️ Settings Menu
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -187,6 +203,9 @@ class _StudentDashboardScreenState
               } else if (value == 'profile') {
                 debugPrint('👤 Profile pressed → navigating to /edit-profile');
                 context.go('/edit-profile');
+              } else if (value == 'sessions') {
+                debugPrint('📅 My Sessions pressed → navigating to /pending-requests');
+                context.go('/pending-requests');
               } else if (value == 'settings') {
                 debugPrint('⚙️ Settings pressed (TODO: implement settings)');
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -205,6 +224,14 @@ class _StudentDashboardScreenState
               child: const Icon(Icons.more_vert, color: Colors.grey),
             ),
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'sessions',
+                child: ListTile(
+                  leading: Icon(Icons.calendar_today),
+                  title: Text('My Sessions'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const PopupMenuItem(
                 value: 'profile',
                 child: ListTile(
